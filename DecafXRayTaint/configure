@@ -830,7 +830,11 @@ for opt do
   ;;
   --disable-vmi) enable_vmi="no"
   ;;
-
+  # mchen - XTaint
+  --enable-xtaint) enable_xtaint="yes"
+  ;;
+  --disable-xtaint) enable_xtaint="no"
+  ;;
   *) echo "ERROR: unknown option $opt"; show_help="yes"
   ;;
   esac
@@ -1140,6 +1144,9 @@ echo "  --disable-vmi            disable VMI support"
 echo "  --enable-vmi             enable VMI support (default)"
 # Add qcow support --Ren
 echo "  --libqcow-path           path to QCOW library"
+# mchen - XTaint tainting
+echo "  --disable-xtaint         disable xtaint IR generation via TCG (default)"
+echo "  --enable-xtaint          enable xtaint IR generation via TCG"
 echo ""
 echo "NOTE: The object files are built at the place where configure is launched"
 exit 1
@@ -2774,9 +2781,9 @@ fi
 # After here, no more $cc or $ld runs
 
 # AWH - Comment out for debugging purposes
-if test "$debug" = "no" ; then
-  CFLAGS="-O2 $CFLAGS"
-fi
+#if test "$debug" = "no" ; then
+#  CFLAGS="-O2 $CFLAGS"
+#fi
 
 # Consult white-list to determine whether to enable werror
 # by default.  Only enable by default for git builds
@@ -2945,6 +2952,8 @@ echo "enable IR logging $tcg_ir_log"
 echo "enable TCG LLVM   $tcg_llvm"
 # AWH - VMI
 echo "enable VMI        $enable_vmi"
+# mchen - XTaint
+echo "enable XTaint     $enable_xtaint"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -3002,6 +3011,10 @@ fi
 #AWH - TCG IR logging
 if test "$tcg_ir_log" = "yes" ; then
   echo "CONFIG_TCG_IR_LOG=y" >> $config_host_mak
+fi
+#mchen - XTaint enable
+if test "$enable_xtaint" = "yes" ; then
+  echo "CONFIG_TCG_XTAINT=y" >> $config_host_mak
 fi
 echo "ARCH=$ARCH" >> $config_host_mak
 if test "$debug_tcg" = "yes" ; then
@@ -3462,6 +3475,8 @@ mkdir -p $target_dir/shared/hooks
 mkdir -p $target_dir/shared/utils
 mkdir -p $target_dir/shared/tainting
 mkdir -p $target_dir/shared/sqlite3
+# mchen
+mkdir -p $target_dir/shared/xtaint
 
 if test "$target" = "arm-linux-user" -o "$target" = "armeb-linux-user" -o "$target" = "arm-bsd-user" -o "$target" = "armeb-bsd-user" ; then
   mkdir -p $target_dir/nwfpe
