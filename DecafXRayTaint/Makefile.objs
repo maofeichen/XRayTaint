@@ -436,6 +436,8 @@ libdecaf-y+=linux_procinfo.o linux_readelf.o linux_vmi_new.o
 libdecaf-y+=function_map.o
 libdecaf-y+=tainting/reduce_taint.o tainting/taintcheck_opt.o tainting/tainting.o
 libdecaf-y+=tainting/taint_memory.o tainting/tcg_taint.o 
+# Add xtaint folder -MChen
+libdecaf-y+=xtaint/xt_log.o 
 libdecaf-y+=DECAF_vm_compress.o
 libdecaf-y+=utils/HashtableWrapper.o
 libdecaf-y+=utils/Output.o

@@ -7,6 +7,7 @@
 #include "DECAF_callback_common.h"
 #include "shared/DECAF_callback_to_QEMU.h"
 
+
 #ifdef CONFIG_TCG_TAINT
 
 /* Track whether the taint tracking system is enabled or not */
