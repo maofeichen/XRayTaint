@@ -16,6 +16,6 @@ extern uint32_t xt_curr_pool_sz;
 
 extern FILE *xt_log;
 
-extern void xt_flush_file(FILE *);
+extern void xt_flushFile(FILE *);
 
 #endif /* XT_LOG_H_ */
