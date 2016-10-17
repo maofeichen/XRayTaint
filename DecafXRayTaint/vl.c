@@ -1444,6 +1444,9 @@ static bool main_loop_should_exit(void)
     if (qemu_shutdown_requested()) {
         qemu_kill_report();
         monitor_protocol_event(QEVENT_SHUTDOWN, NULL);
+#ifdef CONFIG_TCG_XTAINT
+        XT_clean();
+#endif /* CONFIG_TCG_XTAINT */
         if (no_shutdown) {
             vm_stop(RUN_STATE_SHUTDOWN);
         } else {
@@ -3511,6 +3514,9 @@ int main(int argc, char **argv, char **envp)
 	// AVB, This opens the device for sleuthkit to read
 	DECAF_blocks_init();
     DECAF_init();                // some initializations have to be done
+#ifdef CONFIG_TCG_XTAINT // mchen
+    XT_init();
+#endif /* CONFIG_TCG_XTAINT */
     // before loadvm
     if (loadvm == NULL && load_plugin){
         QObject *data = NULL;
