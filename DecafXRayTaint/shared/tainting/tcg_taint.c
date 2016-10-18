@@ -19,6 +19,10 @@
 #include "DECAF_callback_common.h"
 #include "DECAF_callback_to_QEMU.h"
 
+#ifdef CONFIG_TCG_XTAINT
+#include "xtaint/xt_log_ir.h"
+#endif /* CONFIG_TCG_XTAINT */
+
 /* Target-specific metadata buffers are extern'd here so that the taint
    IR insertions can update them. */
 #ifdef CONFIG_TCG_TAINT
@@ -476,6 +480,9 @@ static inline int gen_taintcheck_insn(int search_pc)
 
           /* Reinsert original opcode */
           tcg_gen_mov_i32(orig0, orig1);
+#ifdef CONFIG_TCG_XTAINT
+          XT_log_ir(arg1, orig1, orig0, 0);
+#endif /* CONFIG_TCG_XTAINT */
         }
         break;
 
