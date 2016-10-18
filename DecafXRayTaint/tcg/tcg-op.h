@@ -2376,6 +2376,16 @@ static inline void tcg_gen_taint_qemu_st64(TCGv_i64 arg, TCGv addr, int mem_inde
 #endif /* TCG_TARGET_REG_BITS != 32 */
 #endif /* CONFIG_TCG_TAINT */
 
+#ifdef CONFIG_TCG_XTAINT
+static inline void tcg_gen_XT_log_ir_i32(TCGv_i32 srcShadow,
+										 TCGv_i32 src,
+										 TCGv_i32 dst,
+										 uint32_t flag)
+{
+	tcg_gen_op4_i32(INDEX_op_XT_log_ir_i32, srcShadow, src, dst, flag);
+}
+#endif /* CONFIG_TCG_XTAINT */
+
 #if TCG_TARGET_REG_BITS == 32
 static inline void tcg_gen_qemu_ld8u(TCGv ret, TCGv addr, int mem_index)
 {

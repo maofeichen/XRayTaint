@@ -52,6 +52,10 @@ DEF(br, 0, 0, 1, TCG_OPF_BB_END | TCG_OPF_SIDE_EFFECTS)
 DEF(DECAF_checkeip, 0, 2, 0, TCG_OPF_CALL_CLOBBER | TCG_OPF_SIDE_EFFECTS) //Double check with Andrew
 #endif /*CONFIG_TCG_TAINT */
 
+#ifdef CONFIG_TCG_XTAINT
+DEF(XT_log_ir_i32, 0, 3, 1, 0)
+#endif /* CONFIG_TCG_XTAINT */
+
 DEF(mov_i32, 1, 1, 0, 0)
 DEF(movi_i32, 1, 0, 1, 0)
 DEF(setcond_i32, 1, 2, 1, 0)

@@ -2178,6 +2178,10 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
             goto next;
         case INDEX_op_end:
             goto the_end;
+#ifdef CONFIG_TCG_XTAINT
+        case INDEX_op_XT_log_ir_i32:
+        	break;
+#endif /* CONFIG_TCG_XTAINT */
         default:
             /* Sanity check that we've not introduced any unhandled opcodes. */
             if (def->flags & TCG_OPF_NOT_PRESENT) {
