@@ -481,7 +481,9 @@ static inline int gen_taintcheck_insn(int search_pc)
           /* Reinsert original opcode */
           tcg_gen_mov_i32(orig0, orig1);
 #ifdef CONFIG_TCG_XTAINT
-          XT_log_ir(arg1, orig1, orig0, 0);
+          if(xt_enable_log_ir){
+        	  XT_log_ir(arg1, orig1, orig0, 0);
+          }
 #endif /* CONFIG_TCG_XTAINT */
         }
         break;

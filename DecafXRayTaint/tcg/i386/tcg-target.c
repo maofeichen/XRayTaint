@@ -1915,6 +1915,93 @@ static void tcg_out_taint_qemu_ld(TCGContext *s, const TCGArg *args, int opc)
 }
 #endif /* CONFIG_TCG_TAINT */
 
+#ifdef CONFIG_TCG_XTAINT
+/*
+ * backend of XT_log_ir_i32, no reg allocation needed
+ * args:
+ *  args[0]: index of source shadow
+ *  args[1]: index of source tmp
+ *  args[2]: index of destination tmp
+ *  args[3]: XT log flag
+ */
+static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
+{
+	TCGTemp *ts_shadow, *ts, *ots;
+	int ts_idx, ots_idx;
+	// We modify stack via push/pop, so need to monitor its state
+	uint32_t esp_offset = 0;
+
+	ts_shadow = &s->temps[args[0]];
+	ts = &s->temps[args[1]];
+	ots = &s->temps[args[2]];
+	uint32_t flag = args[3];
+
+	ts_idx = args[1];
+	ots_idx = args[2];
+
+	int lbl_src_shadow_taint;
+	// from qemu: Use SMALL != 0 to force a short forward branch
+	int small = 1;
+	int const_arg = 1;
+	TCGArg ZERO = 0;
+
+	// use tcg_target_call_iarg_regs[0] (eax) as temporary register
+	// push to save
+	tcg_out_push(s, tcg_target_call_iarg_regs[0]);
+	esp_offset += 4;
+
+	// Detects if shadow temporary is tainted
+	switch(ts_shadow->val_type){
+		case TEMP_VAL_DEAD:
+			fprintf(stderr, "source shadow temporary is dead, abort\n");
+			abort();
+			break;
+		case TEMP_VAL_MEM:
+		{
+			// since push tcg_target_call_iarg_regs[0], esp in stack will -4
+			// if the memory address is based on esp, then the result in the
+			// memory address is incorrect. Adds 4 bytes to cancel.
+			if(ts_shadow->mem_reg == 4) // 4 is index of esp (where?)
+				tcg_out_ld(s, ts_shadow->type, tcg_target_call_iarg_regs[0],
+						   ts_shadow->mem_reg, ts_shadow->mem_offset + esp_offset);
+			else
+				tcg_out_ld(s, ts_shadow->type, tcg_target_call_iarg_regs[0],
+						   ts_shadow->mem_reg, ts_shadow->mem_offset);
+
+			lbl_src_shadow_taint = gen_new_label();
+			// is source shadow tainted
+			tcg_out_brcond32(s, TCG_COND_EQ, tcg_target_call_iarg_regs[0],
+							 ZERO, const_arg, lbl_src_shadow_taint, small);
+
+			tcg_out_label(s, lbl_src_shadow_taint, (tcg_target_long)s->code_ptr);
+		}
+			break;
+		case TEMP_VAL_REG:
+		{
+			lbl_src_shadow_taint = gen_new_label();
+			// is source shadow tainted
+			tcg_out_brcond32(s, TCG_COND_EQ, ts_shadow->reg,
+							 ZERO, const_arg, lbl_src_shadow_taint, small);
+
+			tcg_out_label(s, lbl_src_shadow_taint, (tcg_target_long)s->code_ptr);
+		}
+			break;
+		case TEMP_VAL_CONST:
+		{
+			if(ts_shadow->val != 0){}
+		}
+			break;
+		default:
+			fprintf(stderr, "unknown source shadow temporary type: %d\n, abort", ts_shadow->val_type);
+			abort();
+			break;
+	}
+
+	tcg_out_pop(s, tcg_target_call_iarg_regs[0]);
+	esp_offset -= 4;
+}
+#endif /* CONFIG_TCG_XTAINT */
+
 static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
                               const TCGArg *args, const int *const_args)
 {

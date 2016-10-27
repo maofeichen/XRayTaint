@@ -8,7 +8,7 @@
 
 #ifdef CONFIG_TCG_XTAINT
 
-int xt_enable_log_ir = 0;
+int xt_enable_log_ir = 1;
 
 int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data){
     if (!taint_tracking_enabled)

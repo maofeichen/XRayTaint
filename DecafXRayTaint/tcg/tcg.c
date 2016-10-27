@@ -2180,6 +2180,7 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
             goto the_end;
 #ifdef CONFIG_TCG_XTAINT
         case INDEX_op_XT_log_ir_i32:
+        	tcg_out_XT_log_ir(s, args);
         	break;
 #endif /* CONFIG_TCG_XTAINT */
         default:
