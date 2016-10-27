@@ -43,9 +43,14 @@
 #include "tainting/taintcheck_opt.h"
 #endif /* CONFIG_TCG_TAINT */
 
+#ifdef CONFIG_TCG_XTAINT
+#include "xtaint/xt_log_ir.h"
+#endif /* CONFIG_TCG_XTAINT */
+
 #ifdef CONFIG_VMI_ENABLE
 extern void VMI_init(void);
 #endif
+
 
 int DECAF_kvm_enabled = 0;
 
