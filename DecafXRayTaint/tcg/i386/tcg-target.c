@@ -31,6 +31,10 @@
 #endif /* CONFIG_TCG_TAINT */
 #include "DECAF_callback_to_QEMU.h"
 
+#ifdef CONFIG_TCG_XTAINT
+#include "xtaint/xt_flag.h"
+#endif /* CONFGI_TCG_XTAINT */
+
 #ifndef NDEBUG
 static const char * const tcg_target_reg_names[TCG_TARGET_NB_REGS] = {
 #if TCG_TARGET_REG_BITS == 64
@@ -2000,6 +2004,142 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 	tcg_out_pop(s, tcg_target_call_iarg_regs[0]);
 	esp_offset -= 4;
 }
+
+// push temporary: <flag, addr, val> to stack
+// for later writes to files
+inline void XT_push_tmp(TCGContext *s,
+							   TCGArg *args,
+							   TCGTemp *tmp,
+							   uint32_t flag,
+							   int tmp_idx,
+							   int *esp_offset)
+{
+	// temporary addr for global temporaries
+	int tmp_addr = -1;
+
+	switch(tmp->val_type){
+		case TEMP_VAL_DEAD:
+			fprintf(stderr, "push tmp: temporary is dead, abort\n");
+			abort();
+			break;
+		case TEMP_VAL_MEM:
+		{
+			// push flag first
+			tcg_out_pushi(s, flag);
+			*esp_offset += 4;
+
+			// push temporary address
+			// using their temporary name as address:
+			//	1) global temporary, uses the name member in the temporary
+			//	2) others, uses theirs: index - total # of globals
+			if(tmp_idx < s->nb_globals){
+				tmp_addr = get_global_temp_idx(s, tmp);
+				tcg_out_pushi(s, tmp_addr);
+			} else
+				tcg_out_pushi(s, tmp_idx - s->nb_globals);
+			*esp_offset += 4;
+
+			// push val
+			// esp based address is special case, because our modification
+			// results in the offset incorrect
+			if(tmp->mem_reg == TARGET_ESP)
+				tcg_out_ld(s, tmp->type, tcg_target_call_iarg_regs[0],
+				           tmp->mem_reg, tmp->mem_offset + *esp_offset);
+			else
+				tcg_out_ld(s, tmp->type, tcg_target_call_iarg_regs[0],
+				           tmp->mem_reg, tmp->mem_offset);
+			tcg_out_push(s, tcg_target_call_iarg_regs[0]);
+			*esp_offset += 4;
+		}
+			break;
+		case TEMP_VAL_REG:
+		{
+			// push flag first
+			tcg_out_pushi(s, flag);
+			*esp_offset += 4;
+
+			// push temporary address
+			if(tmp_idx < s->nb_globals){
+				tmp_addr = get_global_temp_idx(s, tmp);
+				tcg_out_pushi(s, tmp_addr);
+			} else
+				tcg_out_pushi(s, tmp_idx - s->nb_globals);
+			*esp_offset += 4;
+
+			// push val
+			// special case for eax, since eax has been occupied
+			// to store the source shadow, and its value has push
+			// to stack
+			//	1) -4 is due to eax is the first value push to stack
+			if(tmp->reg == tcg_target_call_iarg_regs[0]){
+				tcg_out_ld(s, tmp->type, tcg_target_call_iarg_regs[0],
+						   TARGET_ESP, *esp_offset-4);
+				tcg_out_push(s, tcg_target_call_iarg_regs[0]);
+			} else
+				tcg_out_push(s, tmp->reg);
+			*esp_offset += 4;
+		}
+			break;
+		case TEMP_VAL_CONST:
+		{
+			// push flag first
+			tcg_out_pushi(s, flag);
+			*esp_offset += 4;
+
+			// push temporary address
+			if(tmp_idx < s->nb_globals){
+				tmp_addr = get_global_temp_idx(s, tmp);
+				tcg_out_pushi(s, tmp_addr);
+			} else
+				tcg_out_pushi(s, tmp_idx - s->nb_globals);
+			*esp_offset += 4;
+
+			// push val
+			tcg_out_pushi(s, tmp->val);
+			*esp_offset += 4;
+		}
+			break;
+		default:
+			fprintf(stderr, "unknown temporary type: %d\n, abort", tmp->val_type);
+			abort();
+			break;
+	}
+}
+
+inline int get_global_temp_idx(TCGContext *s, TCGTemp *tmp){
+    int tmp_idx = G_TEMP_UNKNOWN;
+
+    if(strcmp(tmp->name, "eax") == 0)
+        tmp_idx = G_TEMP_EAX;
+    else if(strcmp(tmp->name, "ebx") == 0)
+        tmp_idx = G_TEMP_EBX;
+    else if(strcmp(tmp->name, "ecx") == 0)
+        tmp_idx = G_TEMP_ECX;
+    else if(strcmp(tmp->name, "edx") == 0)
+        tmp_idx = G_TEMP_EDX;
+    else if(strcmp(tmp->name, "esp") == 0)
+        tmp_idx = G_TEMP_ESP;
+    else if(strcmp(tmp->name, "ebp") == 0)
+        tmp_idx = G_TEMP_EBP;
+    else if(strcmp(tmp->name, "esi") == 0)
+        tmp_idx = G_TEMP_ESI;
+    else if(strcmp(tmp->name, "edi") == 0)
+        tmp_idx = G_TEMP_EDI;
+    else if(strcmp(tmp->name, "cc_op") == 0)
+        tmp_idx = G_TEMP_CC_OP;
+    else if(strcmp(tmp->name, "cc_src") == 0)
+        tmp_idx = G_TEMP_CC_SRC;
+    else if(strcmp(tmp->name, "cc_dst") == 0)
+        tmp_idx = G_TEMP_CC_DST;
+    else if(strcmp(tmp->name, "cc_tmp") == 0)
+        tmp_idx = G_TEMP_CC_TMP;
+//    else{
+//        fprintf(stderr, "unknown global temporary, abort\n");
+//        tcg_abort();
+//    }
+    return tmp_idx;
+}
+
 #endif /* CONFIG_TCG_XTAINT */
 
 static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
