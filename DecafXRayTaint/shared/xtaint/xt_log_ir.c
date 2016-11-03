@@ -8,6 +8,8 @@
 
 #ifdef CONFIG_TCG_XTAINT
 
+int XRAYTAINT_DEBUG = 1;
+
 int xt_enable_log_ir = 1;
 
 int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data){
@@ -29,6 +31,16 @@ int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data){
 inline void XT_log_ir(TCGv srcShadow, TCGv src, TCGv dst, uint32_t flag)
 {
 	tcg_gen_XT_log_ir_i32(srcShadow, src, dst, flag);
+}
+
+void XT_write_tmp()
+{
+	register int ebp asm("ebp");
+	unsigned int offset = 16;
+
+	uint32_t *src_val = (uint32_t*)(ebp + offset);
+	uint32_t *src_addr = (uint32_t*)(ebp + offset + 4);
+	uint32_t *src_flag = (uint32_t*)(ebp + 8);
 }
 
 #endif /* CONFIG_TCG_XTAINT */

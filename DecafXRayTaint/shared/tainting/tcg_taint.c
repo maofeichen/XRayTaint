@@ -978,6 +978,13 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_or_i32(arg0, t0, t2);
           } else
             tcg_gen_mov_i32(arg0, t2);
+#ifdef CONFIG_TCG_XTAINT
+          if(xt_enable_log_ir){
+        	  // log source before operation
+        	  // src: orig1, orig2(position)
+        	  XT_log_ir(arg1, orig1, 0, IR_SOURCE);
+          }
+#endif /* CONFIG_TCG_XTAINT */
           /* Reinsert original opcode */
           tcg_gen_shl_i32(orig0, orig1, orig2);
         }

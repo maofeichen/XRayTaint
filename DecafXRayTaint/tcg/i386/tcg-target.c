@@ -33,6 +33,7 @@
 
 #ifdef CONFIG_TCG_XTAINT
 #include "xtaint/xt_flag.h"
+#include "xtaint/xt_log_ir.h"
 #endif /* CONFGI_TCG_XTAINT */
 
 #ifndef NDEBUG
@@ -1977,6 +1978,14 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 			tcg_out_brcond32(s, TCG_COND_EQ, tcg_target_call_iarg_regs[0],
 							 ZERO, const_arg, lbl_src_shadow_taint, small);
 
+			// If source, only logs the source temporary
+			if(flag == IR_SOURCE)
+				XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+
+			tcg_out_calli(s, (tcg_target_long)XT_write_tmp);
+
+			tcg_out_addi(s, TCG_REG_ESP, 12); // restore esp val due to push
+
 			tcg_out_label(s, lbl_src_shadow_taint, (tcg_target_long)s->code_ptr);
 		}
 			break;
@@ -1987,12 +1996,26 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 			tcg_out_brcond32(s, TCG_COND_EQ, ts_shadow->reg,
 							 ZERO, const_arg, lbl_src_shadow_taint, small);
 
+			if(flag == IR_SOURCE)
+				XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+
+			tcg_out_calli(s, (tcg_target_long)XT_write_tmp);
+
+			tcg_out_addi(s, TCG_REG_ESP, 12); // restore esp val due to push
+
 			tcg_out_label(s, lbl_src_shadow_taint, (tcg_target_long)s->code_ptr);
 		}
 			break;
 		case TEMP_VAL_CONST:
 		{
-			if(ts_shadow->val != 0){}
+			if(ts_shadow->val != 0){
+				if(flag == IR_SOURCE)
+					XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+
+				tcg_out_addi(s, TCG_REG_ESP, 12); // restore esp val due to push
+
+				tcg_out_calli(s, (tcg_target_long)XT_write_tmp);
+			}
 		}
 			break;
 		default:
@@ -2008,11 +2031,11 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 // push temporary: <flag, addr, val> to stack
 // for later writes to files
 inline void XT_push_tmp(TCGContext *s,
-							   TCGArg *args,
-							   TCGTemp *tmp,
-							   uint32_t flag,
-							   int tmp_idx,
-							   int *esp_offset)
+					    TCGArg *args,
+					    TCGTemp *tmp,
+					    uint32_t flag,
+					    int tmp_idx,
+					    int *esp_offset)
 {
 	// temporary addr for global temporaries
 	int tmp_addr = -1;
