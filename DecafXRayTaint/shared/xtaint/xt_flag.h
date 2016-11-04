@@ -9,7 +9,7 @@
 #define TARGET_ESP 4
 
 // Encode of logging ir flag
-#define IR_SOURCE 1
+#define IR_SOURCE 0xBEEF
 #define IR_DESTINATION 2
 #define IR_NORMAL 3
 

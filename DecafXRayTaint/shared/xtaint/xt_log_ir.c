@@ -3,6 +3,7 @@
  */
 
 #include "monitor.h" // For default_mon
+#include "shared/xtaint/xt_log.h"
 #include "shared/xtaint/xt_log_ir.h"
 #include "shared/tainting/taint_memory.h"
 
@@ -28,6 +29,7 @@ int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data){
     return 0;
 }
 
+// Instrument XT ir
 inline void XT_log_ir(TCGv srcShadow, TCGv src, TCGv dst, uint32_t flag)
 {
 	tcg_gen_XT_log_ir_i32(srcShadow, src, dst, flag);
@@ -36,11 +38,27 @@ inline void XT_log_ir(TCGv srcShadow, TCGv src, TCGv dst, uint32_t flag)
 void XT_write_tmp()
 {
 	register int ebp asm("ebp");
-	unsigned int offset = 16;
+	unsigned int offset = 0x10;
 
 	uint32_t *src_val = (uint32_t*)(ebp + offset);
 	uint32_t *src_addr = (uint32_t*)(ebp + offset + 4);
 	uint32_t *src_flag = (uint32_t*)(ebp + 8);
+
+	*(uint32_t *)xt_curr_record = *src_flag;
+	xt_curr_record += 4;
+
+	*(uint32_t *)xt_curr_record = *src_addr;
+	xt_curr_record += 4;
+
+	*(uint32_t *)xt_curr_record = *src_val;
+	xt_curr_record += 4;
+
+	xt_curr_pool_sz -= 12;
+	if(xt_curr_pool_sz < XT_POOL_THRESHOLD){
+		xt_flushFile(xt_log);
+		xt_curr_record = xt_pool;
+		xt_curr_pool_sz = XT_MAX_POOL_SIZE;
+	}
 }
 
 #endif /* CONFIG_TCG_XTAINT */
