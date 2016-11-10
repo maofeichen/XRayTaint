@@ -40,9 +40,9 @@ void XT_write_tmp()
 	register int ebp asm("ebp");
 	unsigned int offset = 0x10;
 
-	uint32_t *src_val = (uint32_t*)(ebp + offset);
+	uint32_t *src_flag = (uint32_t*)(ebp + offset);
 	uint32_t *src_addr = (uint32_t*)(ebp + offset + 4);
-	uint32_t *src_flag = (uint32_t*)(ebp + 8);
+	uint32_t *src_val = (uint32_t*)(ebp + offset + 8);
 
 	*(uint32_t *)xt_curr_record = *src_flag;
 	xt_curr_record += 4;
