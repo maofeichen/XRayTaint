@@ -35,14 +35,16 @@ inline void XT_log_ir(TCGv srcShadow, TCGv src, TCGv dst, uint32_t flag)
 	tcg_gen_XT_log_ir_i32(srcShadow, src, dst, flag);
 }
 
+void XT_debug_empty(){}
+
 void XT_write_tmp()
 {
 	register int ebp asm("ebp");
-	unsigned int offset = 0x10;
+	unsigned int offset = 0x8;
 
-	uint32_t *src_flag = (uint32_t*)(ebp + offset);
+	uint32_t *src_val = (uint32_t*)(ebp + offset);
 	uint32_t *src_addr = (uint32_t*)(ebp + offset + 4);
-	uint32_t *src_val = (uint32_t*)(ebp + offset + 8);
+	uint32_t *src_flag = (uint32_t*)(ebp + offset + 8);
 
 	*(uint32_t *)xt_curr_record = *src_flag;
 	xt_curr_record += 4;

@@ -1978,6 +1978,10 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 			tcg_out_brcond32(s, TCG_COND_EQ, tcg_target_call_iarg_regs[0],
 							 ZERO, const_arg, lbl_src_shadow_taint, small);
 
+			// DEBUG: locates the position of generated host instructions
+			if(XRAYTAINT_DEBUG)
+				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
+
 			// If source, only logs the source temporary
 			if(flag == IR_SOURCE)
 				XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
@@ -1996,6 +2000,10 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 			tcg_out_brcond32(s, TCG_COND_EQ, ts_shadow->reg,
 							 ZERO, const_arg, lbl_src_shadow_taint, small);
 
+			// DEBUG: locates the position of generated host instructions
+			if(XRAYTAINT_DEBUG)
+				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
+
 			if(flag == IR_SOURCE)
 				XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
 
@@ -2009,6 +2017,10 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 		case TEMP_VAL_CONST:
 		{
 			if(ts_shadow->val != 0){
+				// DEBUG: locates the position of generated host instructions
+				if(XRAYTAINT_DEBUG)
+					tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
+
 				if(flag == IR_SOURCE)
 					XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
 
