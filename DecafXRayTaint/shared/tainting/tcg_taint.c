@@ -980,8 +980,8 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_mov_i32(arg0, t2);
 
 #ifdef CONFIG_TCG_XTAINT
+          // log source before operation
           if(xt_enable_log_ir){
-        	  // log source before operation
         	  // src: orig1, orig2(position)
         	   XT_log_ir(arg1, orig1, 0, IR_SOURCE);
           }
@@ -989,6 +989,14 @@ static inline int gen_taintcheck_insn(int search_pc)
 
           /* Reinsert original opcode */
           tcg_gen_shl_i32(orig0, orig1, orig2);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  XT_log_ir(arg1, 0, orig0, IR_DESTINATION_ONE_SOURCE);
+          }
+#endif /* CONFIG_TCG_XTAINT */
         }
         break;
 

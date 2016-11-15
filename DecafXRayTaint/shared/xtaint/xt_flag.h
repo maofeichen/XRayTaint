@@ -9,9 +9,10 @@
 #define TARGET_ESP 4
 
 // Encode of logging ir flag
-#define IR_SOURCE 0xBEEF
-#define IR_DESTINATION 2
-#define IR_NORMAL 3
+#define IR_SOURCE 1
+#define IR_DESTINATION_ONE_SOURCE 2
+#define IR_DESTINATION_TWO_SOURCE 3
+#define IR_NORMAL 4
 
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0

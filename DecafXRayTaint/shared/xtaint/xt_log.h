@@ -14,6 +14,9 @@ extern uint8_t xt_pool[XT_MAX_POOL_SIZE];
 extern uint8_t *xt_curr_record;
 extern uint32_t xt_curr_pool_sz;
 
+extern uint32_t *xt_curr_pos;
+extern uint32_t xt_tmp_buf[12];
+
 extern FILE *xt_log;
 
 extern void xt_flushFile(FILE *);

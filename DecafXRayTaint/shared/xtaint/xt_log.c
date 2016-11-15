@@ -11,20 +11,19 @@ uint32_t xt_curr_pool_sz = XT_POOL_THRESHOLD;
 
 FILE *xt_log = NULL;
 
+uint32_t xt_tmp_buf[12];
+uint32_t *xt_curr_pos = xt_tmp_buf;
+
 void xt_flushFile(FILE *xt_log)
 {
-	uint8_t *i = xt_pool;
+	uint8_t *idx = xt_pool;
 
-	while(i < xt_curr_record){
-		fprintf(xt_log, "%x\t", *(uint32_t*) i);
-		i += 4;
-
-		fprintf(xt_log, "%x\t", *(uint32_t*) i);
-		i += 4;
-
-		fprintf(xt_log, "%x\t", *(uint32_t*) i);
-		i += 4;
-
+	while(idx < xt_curr_record){
+		int i = 0;
+		for(; i < 6; i++){
+			fprintf(xt_log, "%x\t", *(uint32_t*) idx);
+			idx += 4;
+		}
 		fprintf(xt_log, "\n");
 	}
 }

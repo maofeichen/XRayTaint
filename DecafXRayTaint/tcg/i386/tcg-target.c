@@ -1984,11 +1984,10 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 
 			// If source, only logs the source temporary
 			if(flag == IR_SOURCE)
-				XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-
-			tcg_out_calli(s, (tcg_target_long)XT_write_tmp);
-
-			tcg_out_addi(s, TCG_REG_ESP, 12); // restore esp val due to push
+				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+			else if(flag == IR_DESTINATION_ONE_SOURCE){
+				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+			}
 
 			tcg_out_label(s, lbl_src_shadow_taint, (tcg_target_long)s->code_ptr);
 		}
@@ -2005,11 +2004,10 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 			if(flag == IR_SOURCE)
-				XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-
-			tcg_out_calli(s, (tcg_target_long)XT_write_tmp);
-
-			tcg_out_addi(s, TCG_REG_ESP, 12); // restore esp val due to push
+				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+			else if(flag == IR_DESTINATION_ONE_SOURCE){
+				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+			}
 
 			tcg_out_label(s, lbl_src_shadow_taint, (tcg_target_long)s->code_ptr);
 		}
@@ -2022,11 +2020,10 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 					tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 				if(flag == IR_SOURCE)
-					XT_push_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-
-				tcg_out_addi(s, TCG_REG_ESP, 12); // restore esp val due to push
-
-				tcg_out_calli(s, (tcg_target_long)XT_write_tmp);
+					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+				else if(flag == IR_DESTINATION_ONE_SOURCE){
+					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+				}
 			}
 		}
 			break;
@@ -2141,6 +2138,7 @@ inline void XT_push_tmp(TCGContext *s,
 	}
 }
 
+// Encode TCG global temporaries
 inline int get_global_temp_idx(TCGContext *s, TCGTemp *tmp){
     int tmp_idx = G_TEMP_UNKNOWN;
 
@@ -2175,6 +2173,35 @@ inline int get_global_temp_idx(TCGContext *s, TCGTemp *tmp){
     return tmp_idx;
 }
 
+// Log source temporary before operation to tmporary buffer
+inline void XT_log_src_tmp(TCGContext *s,
+						   TCGArg *args,
+						   TCGTemp *tmp,
+						   uint32_t flag,
+						   int tmp_idx,
+						   int *esp_offset)
+{
+	XT_push_tmp(s, args, tmp, flag, tmp_idx, &esp_offset);
+
+	tcg_out_calli(s, (tcg_target_long)XT_write_src_tmp);
+
+	// restore esp val due to push
+	tcg_out_addi(s, TCG_REG_ESP, 12);
+}
+
+// Log destination temporary after operation to tmporary buffer
+inline void XT_log_dst_tmp(TCGContext *s,
+						   TCGArg *args,
+						   TCGTemp *tmp,
+						   uint32_t flag,
+						   int tmp_idx,
+						   int *esp_offset)
+{
+	XT_push_tmp(s, args, tmp, flag, tmp_idx, &esp_offset);
+	tcg_out_calli(s, (tcg_target_long)XT_write_dst_tmp);
+	// restore esp val due to push
+	tcg_out_addi(s, TCG_REG_ESP, 12);
+}
 #endif /* CONFIG_TCG_XTAINT */
 
 static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
