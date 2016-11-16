@@ -5,6 +5,7 @@
 #include "monitor.h" // For default_mon
 #include "shared/xtaint/xt_log.h"
 #include "shared/xtaint/xt_log_ir.h"
+#include "shared/xtaint/xt_flag.h"
 #include "shared/tainting/taint_memory.h"
 
 #ifdef CONFIG_TCG_XTAINT
@@ -12,7 +13,6 @@
 int XRAYTAINT_DEBUG = 1;
 
 int xt_enable_log_ir = 1;
-
 int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data){
     if (!taint_tracking_enabled)
         monitor_printf(default_mon, "Ignored, taint tracking is disabled\n");
@@ -64,6 +64,9 @@ void XT_write_tmp()
 	}
 }
 
+// How many temporaries have been written
+unsigned int num_tmp = 0;
+
 // Write source temporary into temporary buffer
 void XT_write_src_tmp()
 {
@@ -80,6 +83,8 @@ void XT_write_src_tmp()
 	xt_curr_pos++;
 	*xt_curr_pos = *src_val;
 	xt_curr_pos++;
+
+	num_tmp++;
 }
 
 // Write destination temporary into temporary buffer
@@ -88,22 +93,45 @@ void XT_write_dst_tmp()
 	register int ebp asm("ebp");
 	unsigned int offset = 0x8;
 
-	uint32_t *src_val = (uint32_t*)(ebp + offset);
-	uint32_t *src_addr = (uint32_t*)(ebp + offset + 4);
-	uint32_t *src_flag = (uint32_t*)(ebp + offset + 8);
+	uint32_t *dst_val = (uint32_t*)(ebp + offset);
+	uint32_t *dst_addr = (uint32_t*)(ebp + offset + 4);
+	uint32_t *dst_flag = (uint32_t*)(ebp + offset + 8);
 
-	*xt_curr_pos = *src_flag;
+	*xt_curr_pos = *dst_flag;
 	xt_curr_pos++;
-	*xt_curr_pos = *src_addr;
+	*xt_curr_pos = *dst_addr;
 	xt_curr_pos++;
-	*xt_curr_pos = *src_val;
+	*xt_curr_pos = *dst_val;
 	xt_curr_pos++;
 
-	XT_flush_pool();
+	num_tmp++;
+
+	if(*dst_flag == IR_FIRST_DESTINATION){
+		// case num_tmp is 2:
+		// 	indicating <1st src, 1st dst>
+		// case num_tmp is 3:
+		//	indicating <1st src, 2nd src, 1st dst, do nothing
+		if(num_tmp == 2)
+			XT_flush_one_rec_pool();
+		else if(num_tmp == 3){}
+		else{
+			fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
+			abort();
+		}
+	} else if(*dst_flag == IR_SECOND_DESTINATION){
+		if(num_tmp == 2)
+			XT_flush_one_rec_pool();
+		else if(num_tmp == 4)
+			XT_flush_two_rec_pool();
+		else{
+			fprintf(stderr, "IR_SECOND_DESTINATION: number of temporaries error, abort\n");
+			abort();
+		}
+	}
 }
 
-// flush the temporary buffer into xt pool
-void XT_flush_pool()
+// flush the one record in temporary buffer into xt pool
+void XT_flush_one_rec_pool()
 {
 	uint32_t *idx = xt_tmp_buf;
 	int i = 0;
@@ -125,6 +153,59 @@ void XT_flush_pool()
 	// reset the temporary buffer
 	xt_curr_pos = xt_tmp_buf;
 	memset(xt_tmp_buf, 0x0, sizeof(uint32_t)*12);
+	num_tmp = 0;
+}
+
+// flush the two records in temporary buffer into xt pool
+void XT_flush_two_rec_pool()
+{
+	uint32_t *idx;
+	int i;
+
+	// flush 1st rec source
+	idx = xt_tmp_buf;
+	for(i = 0; i < 3; i++){
+		*(uint32_t *)xt_curr_record = *idx;
+		idx++;
+		xt_curr_record += 4;
+	}
+
+	// flush 1st rec destination
+	idx = xt_tmp_buf + 6;
+	for(i = 0; i < 3; i++){
+		*(uint32_t *)xt_curr_record = *idx;
+		idx++;
+		xt_curr_record += 4;
+	}
+
+	// flush 2nd rec source
+	idx = xt_tmp_buf + 3;
+	for(i = 0; i < 3; i++){
+		*(uint32_t *)xt_curr_record = *idx;
+		idx++;
+		xt_curr_record += 4;
+	}
+
+	// flush 2st rec destination
+	idx = xt_tmp_buf + 9;
+	for(i = 0; i < 3; i++){
+		*(uint32_t *)xt_curr_record = *idx;
+		idx++;
+		xt_curr_record += 4;
+	}
+
+	// If hit threash, flush to file and reset
+	xt_curr_pool_sz -= 48;
+	if(xt_curr_pool_sz < XT_POOL_THRESHOLD){
+		xt_flushFile(xt_log);
+		xt_curr_record = xt_pool;
+		xt_curr_pool_sz = XT_MAX_POOL_SIZE;
+	}
+
+	// reset the temporary buffer
+	xt_curr_pos = xt_tmp_buf;
+	memset(xt_tmp_buf, 0x0, sizeof(uint32_t)*12);
+	num_tmp = 0;
 }
 
 #endif /* CONFIG_TCG_XTAINT */

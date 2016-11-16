@@ -1983,9 +1983,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 			// If source, only logs the source temporary
-			if(flag == IR_SOURCE)
+			if(flag == IR_FIRST_SOURCE || flag == IR_SECOND_SOURCE)
 				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-			else if(flag == IR_DESTINATION_ONE_SOURCE){
+			else if(flag == IR_FIRST_DESTINATION  || flag == IR_SECOND_DESTINATION){
 				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 			}
 
@@ -2003,9 +2003,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 			if(XRAYTAINT_DEBUG)
 				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
-			if(flag == IR_SOURCE)
+			if(flag == IR_FIRST_SOURCE || flag == IR_SECOND_SOURCE)
 				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-			else if(flag == IR_DESTINATION_ONE_SOURCE){
+			else if(flag == IR_FIRST_DESTINATION || flag == IR_SECOND_DESTINATION){
 				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 			}
 
@@ -2019,9 +2019,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				if(XRAYTAINT_DEBUG)
 					tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
-				if(flag == IR_SOURCE)
+				if(flag == IR_FIRST_SOURCE || flag == IR_SECOND_SOURCE)
 					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-				else if(flag == IR_DESTINATION_ONE_SOURCE){
+				else if(flag == IR_FIRST_DESTINATION || flag == IR_SECOND_DESTINATION){
 					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 				}
 			}
