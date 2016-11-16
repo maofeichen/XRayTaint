@@ -2,6 +2,7 @@
  * xt_log.c
  */
 #include "shared/xtaint/xt_log.h"
+#include "shared/xtaint/xt_log_ir.h"
 
 #ifdef CONFIG_TCG_XTAINT
 

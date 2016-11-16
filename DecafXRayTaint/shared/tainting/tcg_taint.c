@@ -983,8 +983,8 @@ static inline int gen_taintcheck_insn(int search_pc)
           // log source before operation
           if(xt_enable_log_ir){
         	  // 1st src: orig1; 2nd src: orig2(position)
-        	  XT_log_ir(arg1, orig1, 0, IR_FIRST_SOURCE);
-        	  XT_log_ir(arg2, orig2, 0, IR_SECOND_SOURCE);
+        	  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_SHL, IR_FIRST_SOURCE) );
+        	  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_SHL, IR_SECOND_SOURCE) );
           }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -995,8 +995,8 @@ static inline int gen_taintcheck_insn(int search_pc)
           // log destination after operation
           if(xt_enable_log_ir){
         	  // dst: orig0
-        	  XT_log_ir(arg1, 0, orig0, IR_FIRST_DESTINATION);
-        	  XT_log_ir(arg2, 0, orig0, IR_SECOND_DESTINATION);
+        	  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_SHL, IR_FIRST_DESTINATION) );
+        	  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_SHL, IR_SECOND_DESTINATION) );
           }
 #endif /* CONFIG_TCG_XTAINT */
         }

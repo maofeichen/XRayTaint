@@ -77,7 +77,7 @@ void XT_write_src_tmp()
 	uint32_t *src_addr = (uint32_t*)(ebp + offset + 4);
 	uint32_t *src_flag = (uint32_t*)(ebp + offset + 8);
 
-	*xt_curr_pos = *src_flag;
+	*xt_curr_pos = XT_decode_IREncode(*src_flag);
 	xt_curr_pos++;
 	*xt_curr_pos = *src_addr;
 	xt_curr_pos++;
@@ -92,12 +92,13 @@ void XT_write_dst_tmp()
 {
 	register int ebp asm("ebp");
 	unsigned int offset = 0x8;
+	uint32_t tmpEncode = 0;
 
 	uint32_t *dst_val = (uint32_t*)(ebp + offset);
 	uint32_t *dst_addr = (uint32_t*)(ebp + offset + 4);
 	uint32_t *dst_flag = (uint32_t*)(ebp + offset + 8);
 
-	*xt_curr_pos = *dst_flag;
+	*xt_curr_pos = XT_decode_IREncode(*dst_flag);
 	xt_curr_pos++;
 	*xt_curr_pos = *dst_addr;
 	xt_curr_pos++;
@@ -106,7 +107,8 @@ void XT_write_dst_tmp()
 
 	num_tmp++;
 
-	if(*dst_flag == IR_FIRST_DESTINATION){
+	tmpEncode = XT_decode_TmpEncode(*dst_flag);
+	if(tmpEncode == IR_FIRST_DESTINATION){
 		// case num_tmp is 2:
 		// 	indicating <1st src, 1st dst>
 		// case num_tmp is 3:
@@ -118,7 +120,7 @@ void XT_write_dst_tmp()
 			fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
 			abort();
 		}
-	} else if(*dst_flag == IR_SECOND_DESTINATION){
+	} else if(tmpEncode == IR_SECOND_DESTINATION){
 		if(num_tmp == 2)
 			XT_flush_one_rec_pool();
 		else if(num_tmp == 4)
@@ -208,5 +210,28 @@ void XT_flush_two_rec_pool()
 	num_tmp = 0;
 }
 
+// Encode IREncode and TmpEncode into flag
+// TmpEncode:
+//	- 1st src, 2nd src, 1st destination, 2nd destination, normal tmp
+//	requires 3 bit to encode information
+// IREncode:
+//	- encodes of IRs, there are arround thirties
+//	- requires rest of bits
+inline uint32_t XT_encode_flag(uint32_t IREncode, uint32_t TmpEncode)
+{
+	uint32_t flag;
+	flag = (IREncode << TMP_ENCODE_POS) | TmpEncode;
+	return flag;
+}
+
+inline uint32_t XT_decode_TmpEncode(uint32_t flag)
+{
+	return flag & TMP_MASK;
+}
+
+inline uint32_t XT_decode_IREncode(uint32_t flag)
+{
+	return flag >> TMP_ENCODE_POS;
+}
 #endif /* CONFIG_TCG_XTAINT */
 

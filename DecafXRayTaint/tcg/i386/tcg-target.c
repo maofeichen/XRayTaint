@@ -1940,9 +1940,11 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 	ts = &s->temps[args[1]];
 	ots = &s->temps[args[2]];
 	uint32_t flag = args[3];
+	uint32_t tmpEncode = XT_decode_TmpEncode(flag);
 
 	ts_idx = args[1];
 	ots_idx = args[2];
+
 
 	int lbl_src_shadow_taint;
 	// from qemu: Use SMALL != 0 to force a short forward branch
@@ -1983,9 +1985,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 			// If source, only logs the source temporary
-			if(flag == IR_FIRST_SOURCE || flag == IR_SECOND_SOURCE)
+			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
 				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-			else if(flag == IR_FIRST_DESTINATION  || flag == IR_SECOND_DESTINATION){
+			else if(tmpEncode == IR_FIRST_DESTINATION  || tmpEncode == IR_SECOND_DESTINATION){
 				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 			}
 
@@ -2003,9 +2005,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 			if(XRAYTAINT_DEBUG)
 				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
-			if(flag == IR_FIRST_SOURCE || flag == IR_SECOND_SOURCE)
+			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
 				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-			else if(flag == IR_FIRST_DESTINATION || flag == IR_SECOND_DESTINATION){
+			else if(tmpEncode == IR_FIRST_DESTINATION || tmpEncode == IR_SECOND_DESTINATION){
 				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 			}
 
@@ -2019,9 +2021,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				if(XRAYTAINT_DEBUG)
 					tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
-				if(flag == IR_FIRST_SOURCE || flag == IR_SECOND_SOURCE)
+				if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
 					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-				else if(flag == IR_FIRST_DESTINATION || flag == IR_SECOND_DESTINATION){
+				else if(tmpEncode == IR_FIRST_DESTINATION || tmpEncode == IR_SECOND_DESTINATION){
 					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 				}
 			}
