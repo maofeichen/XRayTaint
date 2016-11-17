@@ -1185,8 +1185,28 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_or_i32(arg0, t0, t2);
           } else
             tcg_gen_mov_i32(arg0, t2);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log source before operation
+          if(xt_enable_log_ir){
+        	  // 1st src: orig1; 2nd src: orig2(position)
+        	  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_ROTL, IR_FIRST_SOURCE) );
+        	  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_ROTL, IR_SECOND_SOURCE) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
           /* Reinsert original opcode */
           tcg_gen_rotl_i32(orig0, orig1, orig2);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_ROTL, IR_FIRST_DESTINATION) );
+        	  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_ROTL, IR_SECOND_DESTINATION) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
         }
         break;
 

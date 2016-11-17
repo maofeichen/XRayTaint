@@ -19,6 +19,8 @@
 #define TCG_SHL 0x36
 #define TCG_SHR 0x37
 #define TCG_SAR 0x38
+#define TCG_ROTL 0x39
+#define TCG_ROTR 0x3a
 
 
 /* Encode global temporary address */
