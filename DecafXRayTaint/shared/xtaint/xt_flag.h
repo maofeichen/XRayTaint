@@ -17,6 +17,7 @@
 
 // Encode IR
 #define TCG_SHL 0x36
+#define TCG_SHR 0x37
 
 
 /* Encode global temporary address */
