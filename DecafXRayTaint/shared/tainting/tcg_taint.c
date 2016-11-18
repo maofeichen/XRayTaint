@@ -1334,8 +1334,31 @@ static inline int gen_taintcheck_insn(int search_pc)
           tcg_gen_xor_i32(t1, t0, t3); // t1 = ((a_min + b_min)^(a_max + b_max))
           tcg_gen_or_i32(t0, arg1, arg2); // t0 = qa | qb
           tcg_gen_or_i32(arg0, t0, t1); // arg0 = (qa | qb) | ( (a_min + b_min) ^ (a_max + b_max)
+
+#ifdef CONFIG_TCG_XTAINT
+          // log source before operation
+          if(xt_enable_log_ir){
+        	  // 1st src: orig1; 2nd src: orig2(position)
+        	  // if(arg1)
+        		  // XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_ADD_i32, IR_FIRST_SOURCE) );
+        	  // if(arg2)
+        		  // XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_ADD_i32, IR_SECOND_SOURCE) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
           //put the original operation back
           tcg_gen_add_i32(orig0, orig1, orig2);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  // if(arg1)
+        		  // XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_ADD_i32, IR_FIRST_DESTINATION) );
+        	  // if(arg2)
+        		  // XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_ADD_i32, IR_SECOND_DESTINATION) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
         }
         break;
       /* T0 = (T1 | T2) | ((V1_min - V2_max) ^ (V1_max - V2_min)) */
@@ -1724,6 +1747,13 @@ static inline int gen_taintcheck_insn(int search_pc)
           orig1 = gen_opparam_ptr[-2];
           orig2 = gen_opparam_ptr[-1];
 
+#ifdef CONFIG_TCG_XTAINT
+          // Log source temporary before operation,
+          // rewind the IR
+          gen_opparam_ptr -= 3;
+          gen_opc_ptr--;
+#endif /* CONFIG_TCG_XTAINT */
+
           /* Perform an OR an arg1 and arg2 to find taint */
           if (arg1 && arg2)
             tcg_gen_or_i32(arg0, arg1, arg2);
@@ -1733,6 +1763,29 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_mov_i32(arg0, arg2);
           else
             tcg_gen_movi_i32(arg0, 0);
+#ifdef CONFIG_TCG_XTAINT
+          // log source before operation
+          if(xt_enable_log_ir){
+        	  // 1st src: orig1; 2nd src: orig2(position)
+        	  if(arg1)
+        		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_XOR_i32, IR_FIRST_SOURCE) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_XOR_i32, IR_SECOND_SOURCE) );
+          }
+
+          // Reinsert original opcode
+          tcg_gen_xor_i32(orig0, orig1, orig2);
+
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  if(arg1)
+        		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_XOR_i32, IR_FIRST_DESTINATION) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_XOR_i32, IR_SECOND_DESTINATION) );
+          }
+
+#endif /* CONFIG_TCG_XTAINT */
         }
         break;
 

@@ -22,6 +22,10 @@
 #define TCG_ROTL 0x39
 #define TCG_ROTR 0x3a
 
+#define TCG_ADD_i32 0x3b
+
+#define TCG_XOR_i32 0x40
+
 
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0
