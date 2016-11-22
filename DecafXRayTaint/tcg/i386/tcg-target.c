@@ -2046,7 +2046,7 @@ inline void XT_push_tmp(TCGContext *s,
 					    TCGTemp *tmp,
 					    uint32_t flag,
 					    int tmp_idx,
-					    int *esp_offset)
+					    uint32_t *esp_offset)
 {
 	// temporary addr for global temporaries
 	int tmp_addr = -1;
@@ -2107,7 +2107,7 @@ inline void XT_push_tmp(TCGContext *s,
 			//	1) -4 is due to eax is the first value push to stack
 			if(tmp->reg == tcg_target_call_iarg_regs[0]){
 				tcg_out_ld(s, tmp->type, tcg_target_call_iarg_regs[0],
-						   TARGET_ESP, *esp_offset-4);
+						   TARGET_ESP, (*esp_offset)-4);
 				tcg_out_push(s, tcg_target_call_iarg_regs[0]);
 			} else
 				tcg_out_push(s, tmp->reg);
@@ -2181,14 +2181,15 @@ inline void XT_log_src_tmp(TCGContext *s,
 						   TCGTemp *tmp,
 						   uint32_t flag,
 						   int tmp_idx,
-						   int *esp_offset)
+						   uint32_t *esp_offset)
 {
-	XT_push_tmp(s, args, tmp, flag, tmp_idx, &esp_offset);
+	XT_push_tmp(s, args, tmp, flag, tmp_idx, esp_offset);
 
 	tcg_out_calli(s, (tcg_target_long)XT_write_src_tmp);
 
 	// restore esp val due to push
 	tcg_out_addi(s, TCG_REG_ESP, 12);
+	*esp_offset -= 12;
 }
 
 // Log destination temporary after operation to tmporary buffer
@@ -2197,12 +2198,13 @@ inline void XT_log_dst_tmp(TCGContext *s,
 						   TCGTemp *tmp,
 						   uint32_t flag,
 						   int tmp_idx,
-						   int *esp_offset)
+						   uint32_t *esp_offset)
 {
-	XT_push_tmp(s, args, tmp, flag, tmp_idx, &esp_offset);
+	XT_push_tmp(s, args, tmp, flag, tmp_idx, esp_offset);
 	tcg_out_calli(s, (tcg_target_long)XT_write_dst_tmp);
 	// restore esp val due to push
 	tcg_out_addi(s, TCG_REG_ESP, 12);
+	*esp_offset -= 12;
 }
 #endif /* CONFIG_TCG_XTAINT */
 
