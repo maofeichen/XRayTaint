@@ -1419,8 +1419,31 @@ static inline int gen_taintcheck_insn(int search_pc)
           tcg_gen_or_i32(t0, arg1, arg2); // t0 = qa | qb
           tcg_gen_or_i32(arg0, t0, t1); // arg0 = (qa | qb) | ( (a_min - b_max) ^ (a_max - b_min)
 
+#ifdef CONFIG_TCG_XTAINT
+          // log source before operation
+          if(xt_enable_log_ir){
+        	  // 1st src: orig1; 2nd src: orig2(position)
+        	  if(arg1)
+        		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_SUB_i32, IR_FIRST_SOURCE) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_SUB_i32, IR_SECOND_SOURCE) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
           //put the original operation back
           tcg_gen_sub_i32(orig0, orig1, orig2);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  if(arg1)
+        		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_SUB_i32, IR_FIRST_DESTINATION) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_SUB_i32, IR_SECOND_DESTINATION) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
         }
         break;
  // AWH
