@@ -25,6 +25,7 @@
 #define TCG_ADD_i32 0x3b
 
 #define TCG_XOR_i32 0x40
+#define TCG_AND_i32 0x41
 
 
 /* Encode global temporary address */

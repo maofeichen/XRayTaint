@@ -1529,8 +1529,35 @@ static inline int gen_taintcheck_insn(int search_pc)
           tcg_gen_or_i32(t1, t2, t3);
           tcg_gen_or_i32(arg0, t0, t1);
 
+#ifdef CONFIG_TCG_XTAINT
+          // mchen: confused tmp name
+          // 1st src: orig1, 2nd src: orig0; dst: orig2
+          // 1st src shadow: arg1, 2nd src shadow: arg2; dst shadow: arg0
+          // log source before operation
+          if(xt_enable_log_ir){
+        	  // 1st src: orig1; 2nd src: orig2(position)
+        	  if(arg1)
+        		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_AND_i32, IR_FIRST_SOURCE) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, orig0, 0, XT_encode_flag(TCG_AND_i32, IR_SECOND_SOURCE) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
           /* Reinsert original opcode */
           tcg_gen_and_i32(orig2, orig1, orig0);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  if(arg1)
+        		  XT_log_ir(arg1, 0, orig2, XT_encode_flag(TCG_AND_i32, IR_FIRST_DESTINATION) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, 0, orig2, XT_encode_flag(TCG_AND_i32, IR_SECOND_DESTINATION) );
+          }
+
+#endif /* CONFIG_TCG_XTAINT */
+
         }
         break;
 
