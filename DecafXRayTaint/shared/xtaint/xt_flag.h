@@ -24,6 +24,9 @@
 
 #define TCG_ADD_i32 0x3b
 #define TCG_SUB_i32 0x3c
+#define TCG_MUL_i32 0x3d
+#define TCG_DIV_i32 0x3e
+#define TCG_MUL2_i32 0x3f
 
 #define TCG_AND_i32 0x40
 #define TCG_OR_i32 0x41

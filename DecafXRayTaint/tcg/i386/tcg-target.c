@@ -1952,6 +1952,19 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 	int const_arg = 1;
 	TCGArg ZERO = 0;
 
+	// DEBUG: locates the position of generated host instructions
+//	if(XRAYTAINT_DEBUG){
+//		tcg_out_push(s, TCG_REG_EAX);
+//		tcg_out_push(s, TCG_REG_EBX);
+//		tcg_out_push(s, TCG_REG_ECX);
+//		tcg_out_push(s, TCG_REG_EDX);
+//		tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
+//		tcg_out_pop(s, TCG_REG_EDX);
+//		tcg_out_pop(s, TCG_REG_ECX);
+//		tcg_out_pop(s, TCG_REG_EBX);
+//		tcg_out_pop(s, TCG_REG_EAX);
+//	}
+
 	// use tcg_target_call_iarg_regs[0] (eax) as temporary register
 	// push to save
 	tcg_out_push(s, tcg_target_call_iarg_regs[0]);
@@ -1981,8 +1994,8 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 							 ZERO, const_arg, lbl_src_shadow_taint, small);
 
 			// DEBUG: locates the position of generated host instructions
-			if(XRAYTAINT_DEBUG)
-				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
+//			if(XRAYTAINT_DEBUG)
+//				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 			// If source, only logs the source temporary
 			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
@@ -2002,8 +2015,8 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 							 ZERO, const_arg, lbl_src_shadow_taint, small);
 
 			// DEBUG: locates the position of generated host instructions
-			if(XRAYTAINT_DEBUG)
-				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
+//			if(XRAYTAINT_DEBUG)
+//				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
 				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
@@ -2018,8 +2031,8 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 		{
 			if(ts_shadow->val != 0){
 				// DEBUG: locates the position of generated host instructions
-				if(XRAYTAINT_DEBUG)
-					tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
+//				if(XRAYTAINT_DEBUG)
+//					tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 				if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
 					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
@@ -2185,7 +2198,11 @@ inline void XT_log_src_tmp(TCGContext *s,
 {
 	XT_push_tmp(s, args, tmp, flag, tmp_idx, esp_offset);
 
+	tcg_out_push(s, TCG_REG_ECX);
+	tcg_out_push(s, TCG_REG_EDX);
 	tcg_out_calli(s, (tcg_target_long)XT_write_src_tmp);
+	tcg_out_pop(s, TCG_REG_EDX);
+	tcg_out_pop(s, TCG_REG_ECX);
 
 	// restore esp val due to push
 	tcg_out_addi(s, TCG_REG_ESP, 12);
@@ -2201,7 +2218,13 @@ inline void XT_log_dst_tmp(TCGContext *s,
 						   uint32_t *esp_offset)
 {
 	XT_push_tmp(s, args, tmp, flag, tmp_idx, esp_offset);
+
+	tcg_out_push(s, TCG_REG_ECX);
+	tcg_out_push(s, TCG_REG_EDX);
 	tcg_out_calli(s, (tcg_target_long)XT_write_dst_tmp);
+	tcg_out_pop(s, TCG_REG_EDX);
+	tcg_out_pop(s, TCG_REG_ECX);
+
 	// restore esp val due to push
 	tcg_out_addi(s, TCG_REG_ESP, 12);
 	*esp_offset -= 12;

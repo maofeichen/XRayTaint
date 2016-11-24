@@ -4246,8 +4246,8 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 
 #ifdef CONFIG_TCG_XTAINT
     if(XRAYTAINT_DEBUG){
-    	if(pc_start == 0x80483ce){
-    		printf("PC: 0x80483ce\n");
+    	if(pc_start == 0x80483cb){
+    		printf("PC: 0x80483cb\n");
     	}
     }
 #endif /* CONFIG_TCG_XTAINT */

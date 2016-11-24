@@ -12,7 +12,7 @@
 
 int XRAYTAINT_DEBUG = 1;
 
-int xt_enable_log_ir = 1;
+int xt_enable_log_ir = 0;
 int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data){
     if (!taint_tracking_enabled)
         monitor_printf(default_mon, "Ignored, taint tracking is disabled\n");
@@ -71,7 +71,7 @@ unsigned int num_tmp = 0;
 void XT_write_src_tmp()
 {
 	register int ebp asm("ebp");
-	unsigned int offset = 0x8;
+	unsigned int offset = 0x10;
 
 	uint32_t *src_val = (uint32_t*)(ebp + offset);
 	uint32_t *src_addr = (uint32_t*)(ebp + offset + 4);
@@ -91,7 +91,7 @@ void XT_write_src_tmp()
 void XT_write_dst_tmp()
 {
 	register int ebp asm("ebp");
-	unsigned int offset = 0x8;
+	unsigned int offset = 0x10;
 	uint32_t tmpEncode = 0;
 
 	uint32_t *dst_val = (uint32_t*)(ebp + offset);
@@ -129,6 +129,9 @@ void XT_write_dst_tmp()
 			fprintf(stderr, "IR_SECOND_DESTINATION: number of temporaries error, abort\n");
 			abort();
 		}
+	} else{
+		fprintf(stderr, "Error destination encode, abort\n");
+		abort();
 	}
 }
 
