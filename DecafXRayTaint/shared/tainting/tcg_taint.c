@@ -1489,12 +1489,12 @@ static inline int gen_taintcheck_insn(int search_pc)
 
 #ifdef CONFIG_TCG_XTAINT
           // log source before operation
-          if(XRAYTAINT_DEBUG){
+          if(xt_enable_log_ir){
         	  // 1st src: orig1; 2nd src: orig2(position)
-//        	  if(arg1)
-//        		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_MUL_i32, IR_FIRST_SOURCE) );
-//        	  if(arg2)
-//        		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_MUL_i32, IR_SECOND_SOURCE) );
+        	  if(arg1)
+        		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_MUL_i32, IR_FIRST_SOURCE) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_MUL_i32, IR_SECOND_SOURCE) );
           }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -1503,12 +1503,12 @@ static inline int gen_taintcheck_insn(int search_pc)
 
 #ifdef CONFIG_TCG_XTAINT
           // log destination after operation
-          if(XRAYTAINT_DEBUG){
+          if(xt_enable_log_ir){
         	  // dst: orig0
-//        	  if(arg1)
-//        		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_MUL_i32, IR_FIRST_DESTINATION) );
-//        	  if(arg2)
-//        		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_MUL_i32, IR_SECOND_DESTINATION) );
+        	  if(arg1)
+        		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_MUL_i32, IR_FIRST_DESTINATION) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_MUL_i32, IR_SECOND_DESTINATION) );
           }
 #endif /* CONFIG_TCG_XTAINT */
 
