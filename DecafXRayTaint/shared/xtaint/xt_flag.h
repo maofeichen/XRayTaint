@@ -38,6 +38,11 @@
 #define TCG_NOT_i32 0x47
 #define TCG_NEG_i32 0x48
 
+#define TCG_EXT8S_i32 0x49
+#define TCG_EXT16S_i32 0x4a
+#define TCG_EXT8U_i32 0x4b
+#define TCG_EXT16U_i32 0x4c
+
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0
 #define G_TEMP_ENV 0xFFF1
