@@ -30,10 +30,12 @@
 #define TCG_REM_i32 0x40
 #define TCG_REMU_i32 0x41
 #define TCG_MUL2_i32 0x42
+#define TCG_DIV2_DIVU2_i32 0x43
 
-#define TCG_AND_i32 0x43
-#define TCG_OR_i32 0x44
-#define TCG_XOR_i32 0x45
+#define TCG_AND_i32 0x44
+#define TCG_OR_i32 0x45
+#define TCG_XOR_i32 0x46
+#define TCG_NOT_i32 0x47
 
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0

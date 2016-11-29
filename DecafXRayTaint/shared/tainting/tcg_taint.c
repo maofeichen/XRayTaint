@@ -2309,10 +2309,36 @@ static inline int gen_taintcheck_insn(int search_pc)
           orig0 = gen_opparam_ptr[-2];
           orig1 = gen_opparam_ptr[-1];
 
+#ifdef CONFIG_TCG_XTAINT
+          // Log source temporary before operation,
+          // rewind the IR
+          gen_opparam_ptr -= 2;
+          gen_opc_ptr--;
+#endif /* CONFIG_TCG_XTAINT */
+
           if (arg1)
             tcg_gen_mov_i32(arg0, arg1);
           else
             tcg_gen_movi_i32(arg0, 0);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log source before operation
+          if(xt_enable_log_ir){
+        	  // 1st src: orig1; 2nd src: orig2(position)
+        	  if(arg1)
+        		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_NOT_i32, IR_FIRST_SOURCE) );
+          }
+
+          // Reinsert original opcode
+          tcg_gen_not_i32(orig0, orig1);
+
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  if(arg1)
+        		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_NOT_i32, IR_FIRST_DESTINATION) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
         }
         break;
 #endif /* TCG_TARGET_HAS_not_i32 */
