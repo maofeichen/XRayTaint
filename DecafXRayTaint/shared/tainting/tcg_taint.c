@@ -1960,30 +1960,88 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_neg_i32(arg0, t2);
 
             // log source before operation
-            if(XRAYTAINT_DEBUG){
+            if(xt_enable_log_ir){
           	  // 1st src: orig1; 2nd src: orig2(position)
-//          	  if(arg1)
-//          		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_XOR_i32, IR_FIRST_SOURCE) );
-//          	  if(arg2)
-//          		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_XOR_i32, IR_SECOND_SOURCE) );
+          	  if(arg1)
+          		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_DIV_i32, IR_FIRST_SOURCE) );
+          	  if(arg2)
+          		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_DIV_i32, IR_SECOND_SOURCE) );
             }
 
             // Reinsert original opcode
             tcg_gen_div_i32(orig0, orig1, orig2);
 
             // log destination after operation
-            if(XRAYTAINT_DEBUG){
+            if(xt_enable_log_ir){
           	  // dst: orig0
-//          	  if(arg1)
-//          		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_XOR_i32, IR_FIRST_DESTINATION) );
-//          	  if(arg2)
-//          		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_XOR_i32, IR_SECOND_DESTINATION) );
+          	  if(arg1)
+          		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_DIV_i32, IR_FIRST_DESTINATION) );
+          	  if(arg2)
+          		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_DIV_i32, IR_SECOND_DESTINATION) );
             }
 
           }
           break;
 #endif /* CONFIG_TCG_XTAINT */
       case INDEX_op_divu_i32: // All-around: mkLazy2()
+#ifdef CONFIG_TCG_XTAINT
+          arg0 = find_shadow_arg(gen_opparam_ptr[-3]);
+          if (arg0) {
+            arg1 = find_shadow_arg(gen_opparam_ptr[-2]);
+            arg2 = find_shadow_arg(gen_opparam_ptr[-1]);
+
+            orig0 = gen_opparam_ptr[-3];
+            orig1 = gen_opparam_ptr[-2];
+            orig2 = gen_opparam_ptr[-1];
+
+            // Log source temporary before operation,
+            // rewind the IR
+            gen_opparam_ptr -= 3;
+            gen_opc_ptr--;
+
+            if (arg1 && arg2) {
+              t0 = tcg_temp_new_i32();
+              tcg_gen_or_i32(t0, arg1, arg2);
+            } else if (arg1) {
+              t0 = tcg_temp_new_i32();
+              tcg_gen_mov_i32(t0, arg1);
+            } else if (arg2) {
+              t0 = tcg_temp_new_i32();
+              tcg_gen_mov_i32(t0, arg2);
+            } else {
+              tcg_gen_movi_i32(arg0, 0);
+            }
+            t1 = tcg_temp_new_i32();
+            t2 = tcg_temp_new_i32();
+            t_zero = tcg_temp_new_i32();
+            tcg_gen_movi_i32(t_zero, 0);
+            tcg_gen_setcond_i32(TCG_COND_NE, t2, t0, t_zero);
+            tcg_gen_neg_i32(arg0, t2);
+
+            // log source before operation
+            if(xt_enable_log_ir){
+          	  // 1st src: orig1; 2nd src: orig2(position)
+          	  if(arg1)
+          		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_DIVU_i32, IR_FIRST_SOURCE) );
+          	  if(arg2)
+          		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_DIVU_i32, IR_SECOND_SOURCE) );
+            }
+
+            // Reinsert original opcode
+            tcg_gen_divu_i32(orig0, orig1, orig2);
+
+            // log destination after operation
+            if(xt_enable_log_ir){
+          	  // dst: orig0
+          	  if(arg1)
+          		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_DIVU_i32, IR_FIRST_DESTINATION) );
+          	  if(arg2)
+          		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_DIVU_i32, IR_SECOND_DESTINATION) );
+            }
+
+          }
+          break;
+#endif /* CONFIG_TCG_XTAINT */
       case INDEX_op_rem_i32: // All-around: mkLazy2()
       case INDEX_op_remu_i32: // All-around: mkLazy2()
         arg0 = find_shadow_arg(gen_opparam_ptr[-3]);
