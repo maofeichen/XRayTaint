@@ -11,9 +11,18 @@
 // Encode of logging ir flag
 #define IR_FIRST_SOURCE 0x1
 #define IR_SECOND_SOURCE 0x2
-#define IR_FIRST_DESTINATION 0x3
-#define IR_SECOND_DESTINATION 0x4
-#define IR_NORMAL 0x5
+#define IR_THIRD_SOURCE 0x3
+#define IR_FOURTH_SOURCE 0x4
+#define IR_FIFTH_SOURCE 0x5
+#define IR_SIXTH_SOURCE 0x6
+
+#define IR_FIRST_DESTINATION 0x7
+#define IR_SECOND_DESTINATION 0x8
+#define IR_THIRD_DESTINATION 0x9
+#define IR_FOURTH_DESTINATION 0xa
+#define IR_FIFTH_DESTINATION 0xb
+#define IR_SIXTH_DESTINATION 0xc
+#define IR_NORMAL 0xd
 
 // Encode IR
 #define TCG_SHL 0x36
@@ -30,20 +39,21 @@
 #define TCG_REM_i32 0x40
 #define TCG_REMU_i32 0x41
 #define TCG_MUL2_i32 0x42
-#define TCG_DIV2_DIVU2_i32 0x43
+#define TCG_DIV2_i32 0x43
+#define TCG_DIVU2_i32 0x44
 
-#define TCG_AND_i32 0x44
-#define TCG_OR_i32 0x45
-#define TCG_XOR_i32 0x46
-#define TCG_NOT_i32 0x47
-#define TCG_NEG_i32 0x48
+#define TCG_AND_i32 0x45
+#define TCG_OR_i32 0x46
+#define TCG_XOR_i32 0x47
+#define TCG_NOT_i32 0x48
+#define TCG_NEG_i32 0x49
 
-#define TCG_EXT8S_i32 0x49
-#define TCG_EXT16S_i32 0x4a
-#define TCG_EXT8U_i32 0x4b
-#define TCG_EXT16U_i32 0x4c
-#define TCG_BSWAP16_i32 0x4d
-#define TCG_BSWAP32_i32 0x4e
+#define TCG_EXT8S_i32 0x4a
+#define TCG_EXT16S_i32 0x4b
+#define TCG_EXT8U_i32 0x4c
+#define TCG_EXT16U_i32 0x4d
+#define TCG_BSWAP16_i32 0x4e
+#define TCG_BSWAP32_i32 0x4f
 
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0

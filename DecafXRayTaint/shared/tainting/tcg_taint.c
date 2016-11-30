@@ -2163,6 +2163,104 @@ static inline int gen_taintcheck_insn(int search_pc)
         break;
 #elif TCG_TARGET_HAS_div2_i32
       case INDEX_op_div2_i32: // All-around: mkLazy3()
+#ifdef CONFIG_TCG_XTAINT
+          arg0 = find_shadow_arg(gen_opparam_ptr[-5]);
+          arg1 = find_shadow_arg(gen_opparam_ptr[-4]);
+          if (arg0 && arg1) {
+            arg2 = find_shadow_arg(gen_opparam_ptr[-3]);
+            arg3 = find_shadow_arg(gen_opparam_ptr[-2]);
+            arg4 = find_shadow_arg(gen_opparam_ptr[-1]);
+
+            orig0 = gen_opparam_ptr[-5];
+            orig1 = gen_opparam_ptr[-4];
+            orig2 = gen_opparam_ptr[-3];
+            orig3 = gen_opparam_ptr[-2];
+            orig4 = gen_opparam_ptr[-1];
+
+            // Log source temporary before operation,
+            // rewind the IR
+            gen_opparam_ptr -= 5;
+            gen_opc_ptr--;
+
+            /* No shadows for any inputs */
+            if (!(arg2 || arg3 || arg4))
+            {
+              tcg_gen_movi_i32(arg0, 0);
+              tcg_gen_movi_i32(arg1, 0);
+              break;
+            }
+            t0 = tcg_temp_new_i32();
+            t1 = tcg_temp_new_i32();
+            t2 = tcg_temp_new_i32();
+
+            /* Check for shadows on arg2 and arg3 */
+            if (arg2 && arg3)
+              tcg_gen_or_i32(t0, arg2, arg3);
+            else if (arg2)
+              tcg_gen_mov_i32(t0, arg2);
+            else if (arg3)
+              tcg_gen_mov_i32(t0, arg3);
+            else
+              tcg_gen_movi_i32(t0, 0);
+
+            /* Check for shadow on arg4 */
+            if (arg4)
+              tcg_gen_or_i32(t2, t0, arg4);
+            else
+              tcg_gen_mov_i32(t2, t0);
+
+            t_zero = tcg_temp_new_i32();
+            tcg_gen_movi_i32(t_zero, 0);
+            tcg_gen_setcond_i32(TCG_COND_NE, t0, t2, t_zero);
+            tcg_gen_neg_i32(arg0, t0);
+            tcg_gen_neg_i32(arg1, t0);
+
+            // log source before operation
+            if(xt_enable_log_ir){
+
+          	  // 1st src: orig2; 2nd src: orig3, 3nd src: orig4
+              // If orig2 (t1) -> arg0 (t0_low)
+          	  if(arg2 && arg0)
+          		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_DIV2_i32, IR_FIRST_SOURCE) );
+          	  // If orig2 (t1) -> arg1 (t0_high)
+          	  if(arg2 && arg1)
+          		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_DIV2_i32, IR_SECOND_SOURCE) );
+
+          	  if(arg3 && arg0)
+          		  XT_log_ir(arg3, orig3, 0, XT_encode_flag(TCG_DIV2_i32, IR_THIRD_SOURCE) );
+          	  if(arg3 && arg1)
+          		  XT_log_ir(arg3, orig3, 0, XT_encode_flag(TCG_DIV2_i32, IR_FOURTH_SOURCE) );
+
+          	  if(arg4 && arg0)
+          		  XT_log_ir(arg4, orig4, 0, XT_encode_flag(TCG_DIV2_i32, IR_FIFTH_SOURCE) );
+          	  if(arg4 && arg1)
+				  XT_log_ir(arg4, orig4, 0, XT_encode_flag(TCG_DIV2_i32, IR_SIXTH_SOURCE) );
+            }
+
+            // Reinsert original opcode
+            tcg_gen_op5_i32(INDEX_op_div2_i32, orig0, orig1, orig2, orig3, orig4);
+
+            // log destination after operation
+            if(xt_enable_log_ir){
+          	  // dst: orig0, orig1
+          	  if(arg2 && arg0)
+          		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_DIV2_i32, IR_FIRST_DESTINATION) );
+          	  if(arg2 && arg1)
+          		  XT_log_ir(arg2, 0, orig1, XT_encode_flag(TCG_DIV2_i32, IR_SECOND_DESTINATION) );
+
+          	  if(arg3 && arg0)
+          		  XT_log_ir(arg3, 0, orig0, XT_encode_flag(TCG_DIV2_i32, IR_THIRD_DESTINATION) );
+          	  if(arg3 && arg1)
+          		  XT_log_ir(arg3, 0, orig1, XT_encode_flag(TCG_DIV2_i32, IR_FOURTH_DESTINATION) );
+
+          	  if(arg4 && arg0)
+          		  XT_log_ir(arg4, 0, orig0, XT_encode_flag(TCG_DIV2_i32, IR_FIFTH_DESTINATION) );
+          	  if(arg4 && arg1)
+          		  XT_log_ir(arg4, 0, orig1, XT_encode_flag(TCG_DIV2_i32, IR_SIXTH_DESTINATION) );
+            }
+          }
+          break;
+#endif /* CONFIG_TCG_XTAINT */
       case INDEX_op_divu2_i32: // All-around: mkLazy3()
         arg0 = find_shadow_arg(gen_opparam_ptr[-5]);
         arg1 = find_shadow_arg(gen_opparam_ptr[-4]);

@@ -9,8 +9,8 @@
 #include "qdict.h"
 #include "tcg-op.h"
 
-#define TMP_ENCODE_POS 3
-#define TMP_MASK 0x7
+#define TMP_ENCODE_POS 4
+#define TMP_MASK 15
 
 extern int XRAYTAINT_DEBUG;
 

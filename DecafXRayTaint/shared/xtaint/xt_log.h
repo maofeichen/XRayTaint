@@ -15,7 +15,7 @@ extern uint8_t *xt_curr_record;
 extern uint32_t xt_curr_pool_sz;
 
 extern uint32_t *xt_curr_pos;
-extern uint32_t xt_tmp_buf[12];
+extern uint32_t xt_tmp_buf[36];
 
 extern FILE *xt_log;
 

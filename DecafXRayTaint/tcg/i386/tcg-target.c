@@ -1998,10 +1998,32 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 //				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 			// If source, only logs the source temporary
-			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
-				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-			else if(tmpEncode == IR_FIRST_DESTINATION  || tmpEncode == IR_SECOND_DESTINATION){
-				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+//			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
+//				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+//			else if(tmpEncode == IR_FIRST_DESTINATION  || tmpEncode == IR_SECOND_DESTINATION){
+//				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+//			}
+
+			switch(tmpEncode){
+				case IR_FIRST_SOURCE:
+				case IR_SECOND_SOURCE:
+				case IR_THIRD_SOURCE:
+				case IR_FOURTH_SOURCE:
+				case IR_FIFTH_SOURCE:
+				case IR_SIXTH_SOURCE:
+					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+					break;
+				case IR_FIRST_DESTINATION:
+				case IR_SECOND_DESTINATION:
+				case IR_THIRD_DESTINATION:
+				case IR_FOURTH_DESTINATION:
+				case IR_FIFTH_DESTINATION:
+				case IR_SIXTH_DESTINATION:
+					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+					break;
+				default:
+					fprintf(stderr, "error source/destination encode: %x, abort\n", tmpEncode);
+					abort();
 			}
 
 			tcg_out_label(s, lbl_src_shadow_taint, (tcg_target_long)s->code_ptr);
@@ -2018,10 +2040,32 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 //			if(XRAYTAINT_DEBUG)
 //				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
-			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
-				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-			else if(tmpEncode == IR_FIRST_DESTINATION || tmpEncode == IR_SECOND_DESTINATION){
-				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+//			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
+//				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+//			else if(tmpEncode == IR_FIRST_DESTINATION || tmpEncode == IR_SECOND_DESTINATION){
+//				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+//			}
+
+			switch(tmpEncode){
+				case IR_FIRST_SOURCE:
+				case IR_SECOND_SOURCE:
+				case IR_THIRD_SOURCE:
+				case IR_FOURTH_SOURCE:
+				case IR_FIFTH_SOURCE:
+				case IR_SIXTH_SOURCE:
+					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+					break;
+				case IR_FIRST_DESTINATION:
+				case IR_SECOND_DESTINATION:
+				case IR_THIRD_DESTINATION:
+				case IR_FOURTH_DESTINATION:
+				case IR_FIFTH_DESTINATION:
+				case IR_SIXTH_DESTINATION:
+					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+					break;
+				default:
+					fprintf(stderr, "error source/destination encode: %x, abort\n", tmpEncode);
+					abort();
 			}
 
 			tcg_out_label(s, lbl_src_shadow_taint, (tcg_target_long)s->code_ptr);
@@ -2034,10 +2078,32 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 //				if(XRAYTAINT_DEBUG)
 //					tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
-				if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
-					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-				else if(tmpEncode == IR_FIRST_DESTINATION || tmpEncode == IR_SECOND_DESTINATION){
-					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+//				if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
+//					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+//				else if(tmpEncode == IR_FIRST_DESTINATION || tmpEncode == IR_SECOND_DESTINATION){
+//					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+//				}
+
+				switch(tmpEncode){
+					case IR_FIRST_SOURCE:
+					case IR_SECOND_SOURCE:
+					case IR_THIRD_SOURCE:
+					case IR_FOURTH_SOURCE:
+					case IR_FIFTH_SOURCE:
+					case IR_SIXTH_SOURCE:
+						XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
+						break;
+					case IR_FIRST_DESTINATION:
+					case IR_SECOND_DESTINATION:
+					case IR_THIRD_DESTINATION:
+					case IR_FOURTH_DESTINATION:
+					case IR_FIFTH_DESTINATION:
+					case IR_SIXTH_DESTINATION:
+						XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+						break;
+					default:
+						fprintf(stderr, "error source/destination encode: %x, abort\n", tmpEncode);
+						abort();
 				}
 			}
 		}

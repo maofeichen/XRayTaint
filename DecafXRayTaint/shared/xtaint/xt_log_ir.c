@@ -108,30 +108,70 @@ void XT_write_dst_tmp()
 	num_tmp++;
 
 	tmpEncode = XT_decode_TmpEncode(*dst_flag);
-	if(tmpEncode == IR_FIRST_DESTINATION){
-		// case num_tmp is 2:
-		// 	indicating <1st src, 1st dst>
-		// case num_tmp is 3:
-		//	indicating <1st src, 2nd src, 1st dst, do nothing
-		if(num_tmp == 2)
-			XT_flush_one_rec_pool();
-		else if(num_tmp == 3){}
-		else{
-			fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
-			abort();
-		}
-	} else if(tmpEncode == IR_SECOND_DESTINATION){
-		if(num_tmp == 2)
-			XT_flush_one_rec_pool();
-		else if(num_tmp == 4)
-			XT_flush_two_rec_pool();
-		else{
-			fprintf(stderr, "IR_SECOND_DESTINATION: number of temporaries error, abort\n");
-			abort();
-		}
-	} else{
-		fprintf(stderr, "Error destination encode, abort\n");
-		abort();
+
+//	if(tmpEncode == IR_FIRST_DESTINATION){
+//		// case num_tmp is 2:
+//		// 	indicating <1st src, 1st dst>
+//		// case num_tmp is 3:
+//		//	indicating <1st src, 2nd src, 1st dst, do nothing
+//		if(num_tmp == 2)
+//			XT_flush_one_rec_pool();
+//		else if(num_tmp == 3){}
+//		else{
+//			fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
+//			abort();
+//		}
+//	} else if(tmpEncode == IR_SECOND_DESTINATION){
+//		if(num_tmp == 2)
+//			XT_flush_one_rec_pool();
+//		else if(num_tmp == 4)
+//			XT_flush_two_rec_pool();
+//		else{
+//			fprintf(stderr, "IR_SECOND_DESTINATION: number of temporaries error, abort\n");
+//			abort();
+//		}
+//	} else{
+//		fprintf(stderr, "Error destination encode, abort\n");
+//		abort();
+//	}
+
+	switch(tmpEncode){
+		case IR_FIRST_DESTINATION:
+			// case num_tmp is 2:
+			// 	indicating <1st src, 1st dst>
+			// case num_tmp is 3:
+			//	indicating <1st src, 2nd src, 1st dst, do nothing
+			switch(num_tmp){
+				case 2:
+					XT_flush_one_rec_pool();
+					break;
+				case 3:
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+					break;
+				default:
+					fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
+					abort();
+			}
+			break;
+		case IR_SECOND_DESTINATION:
+			switch(num_tmp){
+				case 2:
+					XT_flush_one_rec_pool();
+					break;
+				case 4:
+					XT_flush_two_rec_pool();
+					break;
+				default:
+					fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
+					abort();
+			}
+			break;
+		default:
+			fprintf(stderr, "error destination tmp encode\n");
+			break;
 	}
 }
 
@@ -229,7 +269,8 @@ inline uint32_t XT_encode_flag(uint32_t IREncode, uint32_t TmpEncode)
 
 inline uint32_t XT_decode_TmpEncode(uint32_t flag)
 {
-	return flag & TMP_MASK;
+	// return flag & TMP_MASK;
+	return flag & 0xf;
 }
 
 inline uint32_t XT_decode_IREncode(uint32_t flag)
