@@ -42,6 +42,8 @@
 #define TCG_EXT16S_i32 0x4a
 #define TCG_EXT8U_i32 0x4b
 #define TCG_EXT16U_i32 0x4c
+#define TCG_BSWAP16_i32 0x4d
+#define TCG_BSWAP32_i32 0x4e
 
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0
