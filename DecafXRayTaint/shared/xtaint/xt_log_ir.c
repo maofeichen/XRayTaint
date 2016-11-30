@@ -72,12 +72,24 @@ void XT_write_src_tmp()
 {
 	register int ebp asm("ebp");
 	unsigned int offset = 0x10;
+	uint32_t * prev_flag;
 
 	uint32_t *src_val = (uint32_t*)(ebp + offset);
 	uint32_t *src_addr = (uint32_t*)(ebp + offset + 4);
 	uint32_t *src_flag = (uint32_t*)(ebp + offset + 8);
 
-	*xt_curr_pos = XT_decode_IREncode(*src_flag);
+	// if previous tmp flag is a dst flag, reset the tmp pool
+	prev_flag = xt_curr_pos - 3;
+	if(xt_curr_pos != xt_pool &&
+	   XT_decode_TmpEncode(*prev_flag) >= IR_FIRST_DESTINATION){
+		// reset the temporary buffer
+		xt_curr_pos = xt_tmp_buf;
+		memset(xt_tmp_buf, 0x0, sizeof(uint32_t)*XT_BUF_POOL_SZ);
+		num_tmp = 0;
+	}
+
+	// *xt_curr_pos = XT_decode_IREncode(*src_flag);
+	*xt_curr_pos = *src_flag;
 	xt_curr_pos++;
 	*xt_curr_pos = *src_addr;
 	xt_curr_pos++;
@@ -93,12 +105,14 @@ void XT_write_dst_tmp()
 	register int ebp asm("ebp");
 	unsigned int offset = 0x10;
 	uint32_t tmpEncode = 0;
+	uint32_t *src_tmp_begin;
 
 	uint32_t *dst_val = (uint32_t*)(ebp + offset);
 	uint32_t *dst_addr = (uint32_t*)(ebp + offset + 4);
 	uint32_t *dst_flag = (uint32_t*)(ebp + offset + 8);
 
-	*xt_curr_pos = XT_decode_IREncode(*dst_flag);
+	// *xt_curr_pos = XT_decode_IREncode(*dst_flag);
+	*xt_curr_pos = *dst_flag;
 	xt_curr_pos++;
 	*xt_curr_pos = *dst_addr;
 	xt_curr_pos++;
@@ -108,6 +122,8 @@ void XT_write_dst_tmp()
 	num_tmp++;
 
 	tmpEncode = XT_decode_TmpEncode(*dst_flag);
+	src_tmp_begin = XT_search_src_tmp(tmpEncode);
+	XT_flush_pair_rec(src_tmp_begin, dst_flag, dst_addr, dst_val);
 
 //	if(tmpEncode == IR_FIRST_DESTINATION){
 //		// case num_tmp is 2:
@@ -135,44 +151,44 @@ void XT_write_dst_tmp()
 //		abort();
 //	}
 
-	switch(tmpEncode){
-		case IR_FIRST_DESTINATION:
-			// case num_tmp is 2:
-			// 	indicating <1st src, 1st dst>
-			// case num_tmp is 3:
-			//	indicating <1st src, 2nd src, 1st dst, do nothing
-			switch(num_tmp){
-				case 2:
-					XT_flush_one_rec_pool();
-					break;
-				case 3:
-				case 4:
-				case 5:
-				case 6:
-				case 7:
-					break;
-				default:
-					fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
-					abort();
-			}
-			break;
-		case IR_SECOND_DESTINATION:
-			switch(num_tmp){
-				case 2:
-					XT_flush_one_rec_pool();
-					break;
-				case 4:
-					XT_flush_two_rec_pool();
-					break;
-				default:
-					fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
-					abort();
-			}
-			break;
-		default:
-			fprintf(stderr, "error destination tmp encode\n");
-			break;
-	}
+//	switch(tmpEncode){
+//		case IR_FIRST_DESTINATION:
+//			// case num_tmp is 2:
+//			// 	indicating <1st src, 1st dst>
+//			// case num_tmp is 3:
+//			//	indicating <1st src, 2nd src, 1st dst, do nothing
+//			switch(num_tmp){
+//				case 2:
+//					XT_flush_one_rec_pool();
+//					break;
+//				case 3:
+//				case 4:
+//				case 5:
+//				case 6:
+//				case 7:
+//					break;
+//				default:
+//					fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
+//					abort();
+//			}
+//			break;
+//		case IR_SECOND_DESTINATION:
+//			switch(num_tmp){
+//				case 2:
+//					XT_flush_one_rec_pool();
+//					break;
+//				case 4:
+//					XT_flush_two_rec_pool();
+//					break;
+//				default:
+//					fprintf(stderr, "IR_FIRST_DESTINATION: number of temporaries error, abort\n");
+//					abort();
+//			}
+//			break;
+//		default:
+//			fprintf(stderr, "error destination tmp encode\n");
+//			break;
+//	}
 }
 
 // flush the one record in temporary buffer into xt pool
@@ -251,6 +267,87 @@ void XT_flush_two_rec_pool()
 	xt_curr_pos = xt_tmp_buf;
 	memset(xt_tmp_buf, 0x0, sizeof(uint32_t)*12);
 	num_tmp = 0;
+}
+
+void XT_flush_pair_rec(uint32_t *src, uint32_t *dst_flag, uint32_t *dst_addr, uint32_t *dst_val)
+{
+	int i = 0;
+	// flush src tmp
+	*(uint32_t *)xt_curr_record = XT_decode_IREncode(*src);
+	src++;
+	xt_curr_record += 4;
+	// flush src addr and val
+	for(; i < 2; i++){
+		*(uint32_t *)xt_curr_record = *src;
+		src++;
+		xt_curr_record += 4;
+	}
+
+	// flush dst tmp
+	*(uint32_t *)xt_curr_record = XT_decode_IREncode(*dst_flag);
+	xt_curr_record += 4;
+	*(uint32_t *)xt_curr_record = *dst_addr;
+	xt_curr_record += 4;
+	*(uint32_t *)xt_curr_record = *dst_val;
+	xt_curr_record += 4;
+
+	// If hit threash, flush to file and reset
+	xt_curr_pool_sz -= 24;
+	if(xt_curr_pool_sz < XT_POOL_THRESHOLD){
+		xt_flushFile(xt_log);
+		xt_curr_record = xt_pool;
+		xt_curr_pool_sz = XT_MAX_POOL_SIZE;
+	}
+}
+
+// Based on given destination temporarty encode,
+// i.e., IR_FIRST_DESTINATION,
+// Searches its corresponding source temporary in the tmp pool
+uint32_t *XT_search_src_tmp(uint32_t dst_tmp_encode)
+{
+	uint32_t *curr_field = xt_tmp_buf;
+	int sz = 0;
+	for(; sz < XT_BUF_POOL_SZ; sz++){
+		if(XT_cmp_tmp_encode(XT_decode_TmpEncode(*curr_field), dst_tmp_encode) )
+			return curr_field;
+		curr_field++;
+	}
+	fprintf(stderr, "error not found corresponding source temporary encode\n");
+	abort();
+}
+
+inline int XT_cmp_tmp_encode(uint32_t src_encode, uint32_t dst_encode)
+{
+	switch(dst_encode){
+		case IR_FIRST_DESTINATION:
+			if(src_encode == IR_FIRST_SOURCE)
+				return 1;
+			break;
+		case IR_SECOND_DESTINATION:
+			if(src_encode == IR_SECOND_SOURCE)
+				return 1;
+			break;
+		case IR_THIRD_DESTINATION:
+			if(src_encode == IR_THIRD_SOURCE)
+				return 1;
+			break;
+		case IR_FOURTH_DESTINATION:
+			if(src_encode == IR_FOURTH_SOURCE)
+				return 1;
+			break;
+		case IR_FIFTH_DESTINATION:
+			if(src_encode == IR_FIFTH_SOURCE)
+				return 1;
+			break;
+		case IR_SIXTH_DESTINATION:
+			if(src_encode == IR_SIXTH_SOURCE)
+				return 1;
+			break;
+		default:
+			fprintf(stderr, "error incorrect destination temparary encode\n");
+			break;
+	}
+	return 0;
 }
 
 // Encode IREncode and TmpEncode into flag

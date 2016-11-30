@@ -28,8 +28,12 @@ extern void XT_write_tmp();
 extern unsigned int num_tmp;
 extern void XT_write_src_tmp();
 extern void XT_write_dst_tmp();
+
 extern void XT_flush_one_rec_pool();
 extern void XT_flush_two_rec_pool();
+extern void XT_flush_pair_rec(uint32_t *src, uint32_t *dst_flag, uint32_t *dst_addr, uint32_t *dst_val);
+extern uint32_t *XT_search_src_tmp(uint32_t dst_tmp_encode);
+extern inline int XT_cmp_tmp_encode(uint32_t src_encode, uint32_t dst_encode);
 
 extern inline uint32_t XT_encode_flag(uint32_t IREncode, uint32_t TmpEncode);
 extern inline uint32_t XT_decode_TmpEncode(uint32_t flag);
