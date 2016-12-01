@@ -354,8 +354,30 @@ static inline int gen_taintcheck_insn(int search_pc)
           else
             tcg_gen_deposit_tl(arg0, arg1, arg2, pos, len);
 
+#ifdef CONFIG_TCG_XTAINT
+          // log source before operation
+          if(xt_enable_log_ir){
+        	  // 1st src: orig1; 2nd src: orig2(position)
+        	  if(arg1)
+        		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_DEPOSIT_i32, IR_FIRST_SOURCE) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_DEPOSIT_i32, IR_SECOND_SOURCE) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
           /* Reinsert the original IR */
           tcg_gen_deposit_i32(orig0, orig1, orig2, pos, len);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  if(arg1)
+        		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_DEPOSIT_i32, IR_FIRST_DESTINATION) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_DEPOSIT_i32, IR_SECOND_DESTINATION) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
         }
         break;
 
@@ -1787,7 +1809,7 @@ static inline int gen_taintcheck_insn(int search_pc)
 
 #ifdef CONFIG_TCG_XTAINT
           // log source before operation
-          if(XRAYTAINT_DEBUG){
+          if(xt_enable_log_ir){
         	  // 1st src: orig2; 2nd src: orig3
         	  if(arg2 && arg0)
         		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_MUL2_i32, IR_FIRST_SOURCE) );
@@ -1804,7 +1826,7 @@ static inline int gen_taintcheck_insn(int search_pc)
           tcg_gen_op4_i32(INDEX_op_mulu2_i32, orig0, orig1, orig2, orig3);
 
           // log destination after operation
-          if(XRAYTAINT_DEBUG){
+          if(xt_enable_log_ir){
         	  // dst: orig0, orig1
         	  if(arg2 && arg0)
         		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_MUL2_i32, IR_FIRST_DESTINATION) );
@@ -2226,7 +2248,7 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_neg_i32(arg1, t0);
 
             // log source before operation
-            if(XRAYTAINT_DEBUG){
+            if(xt_enable_log_ir){
 
           	  // 1st src: orig2; 2nd src: orig3, 3nd src: orig4
               // If orig2 (t1) -> arg0 (t0_low)
@@ -2251,7 +2273,7 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_op5_i32(INDEX_op_div2_i32, orig0, orig1, orig2, orig3, orig4);
 
             // log destination after operation
-            if(XRAYTAINT_DEBUG){
+            if(xt_enable_log_ir){
           	  // dst: orig0, orig1
           	  if(arg2 && arg0)
           		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_DIV2_i32, IR_FIRST_DESTINATION) );

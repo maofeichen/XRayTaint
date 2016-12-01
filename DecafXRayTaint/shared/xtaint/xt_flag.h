@@ -55,6 +55,8 @@
 #define TCG_BSWAP16_i32 0x4e
 #define TCG_BSWAP32_i32 0x4f
 
+#define TCG_DEPOSIT_i32 0x50
+
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0
 #define G_TEMP_ENV 0xFFF1
