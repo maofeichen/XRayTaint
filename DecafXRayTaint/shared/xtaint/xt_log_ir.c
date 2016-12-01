@@ -191,6 +191,43 @@ void XT_write_dst_tmp()
 //	}
 }
 
+void XT_write_src_dst_tmp()
+{
+	register int ebp asm("ebp");
+	unsigned int offset = 0x10;
+	uint32_t tmpEncode = 0;
+
+    uint32_t *dst_val = (uint32_t *) (ebp + offset);
+    uint32_t *dst_addr = (uint32_t *) (ebp + offset + 4);
+    uint32_t *dst_flag = (uint32_t *) (ebp + offset + 8);
+
+    uint32_t *src_val = (uint32_t *) (ebp + offset + 12);
+    uint32_t *src_addr = (uint32_t *) (ebp + offset + 16);
+    uint32_t *src_flag = (uint32_t *) (ebp + offset + 20);
+
+    *(uint32_t *)xt_curr_record = XT_decode_IREncode(*src_flag);
+    xt_curr_record += 4;
+    *(uint32_t *) xt_curr_record = *src_addr;
+    xt_curr_record += 4;
+    *(uint32_t *) xt_curr_record = *src_val;
+    xt_curr_record += 4;
+
+    *(uint32_t *)xt_curr_record = XT_decode_IREncode(*dst_flag);
+    xt_curr_record += 4;
+    *(uint32_t *) xt_curr_record = *dst_addr;
+    xt_curr_record += 4;
+    *(uint32_t *) xt_curr_record = *dst_val;
+    xt_curr_record += 4;
+
+	// If hit threash, flush to file and reset
+	xt_curr_pool_sz -= 24;
+	if(xt_curr_pool_sz < XT_POOL_THRESHOLD){
+		xt_flushFile(xt_log);
+		xt_curr_record = xt_pool;
+		xt_curr_pool_sz = XT_MAX_POOL_SIZE;
+	}
+}
+
 // flush the one record in temporary buffer into xt pool
 void XT_flush_one_rec_pool()
 {

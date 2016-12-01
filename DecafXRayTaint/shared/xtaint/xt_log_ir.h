@@ -28,6 +28,7 @@ extern void XT_write_tmp();
 extern unsigned int num_tmp;
 extern void XT_write_src_tmp();
 extern void XT_write_dst_tmp();
+extern void XT_write_src_dst_tmp();
 
 extern void XT_flush_one_rec_pool();
 extern void XT_flush_two_rec_pool();

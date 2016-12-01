@@ -1998,12 +1998,6 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 //				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
 			// If source, only logs the source temporary
-//			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
-//				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-//			else if(tmpEncode == IR_FIRST_DESTINATION  || tmpEncode == IR_SECOND_DESTINATION){
-//				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
-//			}
-
 			switch(tmpEncode){
 				case IR_FIRST_SOURCE:
 				case IR_SECOND_SOURCE:
@@ -2020,6 +2014,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				case IR_FIFTH_DESTINATION:
 				case IR_SIXTH_DESTINATION:
 					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+					break;
+				case IR_NORMAL:
+					XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 					break;
 				default:
 					fprintf(stderr, "error source/destination encode: %x, abort\n", tmpEncode);
@@ -2040,12 +2037,6 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 //			if(XRAYTAINT_DEBUG)
 //				tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
 
-//			if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
-//				XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-//			else if(tmpEncode == IR_FIRST_DESTINATION || tmpEncode == IR_SECOND_DESTINATION){
-//				XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
-//			}
-
 			switch(tmpEncode){
 				case IR_FIRST_SOURCE:
 				case IR_SECOND_SOURCE:
@@ -2063,6 +2054,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				case IR_SIXTH_DESTINATION:
 					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 					break;
+				case IR_NORMAL:
+					XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
+					break;
 				default:
 					fprintf(stderr, "error source/destination encode: %x, abort\n", tmpEncode);
 					abort();
@@ -2077,12 +2071,6 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				// DEBUG: locates the position of generated host instructions
 //				if(XRAYTAINT_DEBUG)
 //					tcg_out_calli(s, (tcg_target_long)XT_debug_empty);
-
-//				if(tmpEncode == IR_FIRST_SOURCE || tmpEncode == IR_SECOND_SOURCE)
-//					XT_log_src_tmp(s, args, ts, flag, ts_idx, &esp_offset);
-//				else if(tmpEncode == IR_FIRST_DESTINATION || tmpEncode == IR_SECOND_DESTINATION){
-//					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
-//				}
 
 				switch(tmpEncode){
 					case IR_FIRST_SOURCE:
@@ -2100,6 +2088,9 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 					case IR_FIFTH_DESTINATION:
 					case IR_SIXTH_DESTINATION:
 						XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
+						break;
+					case IR_NORMAL:
+						XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 						break;
 					default:
 						fprintf(stderr, "error source/destination encode: %x, abort\n", tmpEncode);
@@ -2294,6 +2285,30 @@ inline void XT_log_dst_tmp(TCGContext *s,
 	// restore esp val due to push
 	tcg_out_addi(s, TCG_REG_ESP, 12);
 	*esp_offset -= 12;
+}
+
+// Log both src and dst temporaries
+inline void XT_log_src_dst_tmp(TCGContext *s,
+							   TCGArg *args,
+							   TCGTemp *src_tmp,
+							   TCGTemp *dst_tmp,
+							   uint32_t flag,
+							   int src_tmp_idx,
+							   int dst_tmp_idx,
+							   uint32_t *esp_offset)
+{
+	XT_push_tmp(s, args, src_tmp, flag, src_tmp_idx, esp_offset);
+	XT_push_tmp(s, args, dst_tmp, flag, dst_tmp_idx, esp_offset);
+
+	tcg_out_push(s, TCG_REG_ECX);
+	tcg_out_push(s, TCG_REG_EDX);
+	tcg_out_calli(s, (tcg_target_long)XT_write_src_dst_tmp);
+	tcg_out_pop(s, TCG_REG_EDX);
+	tcg_out_pop(s, TCG_REG_ECX);
+
+	// restore esp val due to push
+	tcg_out_addi(s, TCG_REG_ESP, 24);
+	*esp_offset -= 24;
 }
 #endif /* CONFIG_TCG_XTAINT */
 
