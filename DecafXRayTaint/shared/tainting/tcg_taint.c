@@ -356,7 +356,7 @@ static inline int gen_taintcheck_insn(int search_pc)
 
 #ifdef CONFIG_TCG_XTAINT
           // log source before operation
-          if(xt_enable_log_ir){
+          if(XRAYTAINT_DEBUG){
         	  // 1st src: orig1; 2nd src: orig2(position)
         	  if(arg1)
         		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_DEPOSIT_i32, IR_FIRST_SOURCE) );
@@ -370,7 +370,7 @@ static inline int gen_taintcheck_insn(int search_pc)
 
 #ifdef CONFIG_TCG_XTAINT
           // log destination after operation
-          if(xt_enable_log_ir){
+          if(XRAYTAINT_DEBUG){
         	  // dst: orig0
         	  if(arg1)
         		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_DEPOSIT_i32, IR_FIRST_DESTINATION) );
