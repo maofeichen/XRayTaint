@@ -598,6 +598,16 @@ static inline int gen_taintcheck_insn(int search_pc)
             } else
               /* Patch in opcode to load taint from tempidx */
               tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));
+
+#ifdef CONFIG_TCG_XTAINT
+			  if(XRAYTAINT_DEBUG){
+				  // Still pointer is NOT tainting, only memory content is tainted.
+				  // Use arg0 instead of arg1, because at this time taints had already
+				  // loaded into shadow of destination.
+				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+			  }
+#endif /* CONFIG_TCG_XTAINT */
+
           } else
             /* Patch in opcode to load taint from tempidx */
             tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));

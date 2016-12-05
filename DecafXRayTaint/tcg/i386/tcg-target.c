@@ -2247,15 +2247,19 @@ inline void XT_push_ld_src_tmp(TCGContext *s,
 			// using their temporary name as address:
 			//	1) global temporary, uses the name member in the temporary
 			//	2) others, uses theirs: index - total # of globals
-			if(src_tmp_idx < s->nb_globals){
-				tmp_addr = get_global_temp_idx(s, src_tmp);
-				tcg_out_pushi(s, tmp_addr);
-			} else
-				tcg_out_pushi(s, src_tmp_idx - s->nb_globals);
-			*esp_offset += 4;
+//			if(src_tmp_idx < s->nb_globals){
+//				tmp_addr = get_global_temp_idx(s, src_tmp);
+//				tcg_out_pushi(s, tmp_addr);
+//			} else
+//				tcg_out_pushi(s, src_tmp_idx - s->nb_globals);
+//			*esp_offset += 4;
+
+			// uses temporaries' val as addr
+			XT_push_tmp_val(s, args, src_tmp, esp_offset);
 
 			// push val
-			XT_push_ld_src_val(s, args, dst_tmp, esp_offset);
+			// dst tmp val is same as src
+			XT_push_tmp_val(s, args, dst_tmp, esp_offset);
 		}
 			break;
 		case TEMP_VAL_REG:
@@ -2265,15 +2269,19 @@ inline void XT_push_ld_src_tmp(TCGContext *s,
 			*esp_offset += 4;
 
 			// push temporary address
-			if(src_tmp_idx < s->nb_globals){
-				tmp_addr = get_global_temp_idx(s, src_tmp);
-				tcg_out_pushi(s, tmp_addr);
-			} else
-				tcg_out_pushi(s, src_tmp_idx - s->nb_globals);
-			*esp_offset += 4;
+//			if(src_tmp_idx < s->nb_globals){
+//				tmp_addr = get_global_temp_idx(s, src_tmp);
+//				tcg_out_pushi(s, tmp_addr);
+//			} else
+//				tcg_out_pushi(s, src_tmp_idx - s->nb_globals);
+//			*esp_offset += 4;
+
+			// uses temporaries' val as addr
+			XT_push_tmp_val(s, args, src_tmp, esp_offset);
+
 
 			// push val
-			XT_push_ld_src_val(s, args, dst_tmp, esp_offset);
+			XT_push_tmp_val(s, args, dst_tmp, esp_offset);
 		}
 			break;
 		case TEMP_VAL_CONST:
@@ -2283,15 +2291,18 @@ inline void XT_push_ld_src_tmp(TCGContext *s,
 			*esp_offset += 4;
 
 			// push temporary address
-			if(src_tmp_idx < s->nb_globals){
-				tmp_addr = get_global_temp_idx(s, src_tmp);
-				tcg_out_pushi(s, tmp_addr);
-			} else
-				tcg_out_pushi(s, src_tmp_idx - s->nb_globals);
-			*esp_offset += 4;
+//			if(src_tmp_idx < s->nb_globals){
+//				tmp_addr = get_global_temp_idx(s, src_tmp);
+//				tcg_out_pushi(s, tmp_addr);
+//			} else
+//				tcg_out_pushi(s, src_tmp_idx - s->nb_globals);
+//			*esp_offset += 4;
+
+			// uses temporaries' val as addr
+			XT_push_tmp_val(s, args, src_tmp, esp_offset);
 
 			// push val
-			XT_push_ld_src_val(s, args, dst_tmp, esp_offset);
+			XT_push_tmp_val(s, args, dst_tmp, esp_offset);
 		}
 			break;
 		default:
@@ -2301,7 +2312,7 @@ inline void XT_push_ld_src_tmp(TCGContext *s,
 	}
 }
 
-inline void XT_push_ld_src_val(TCGContext *s,
+inline void XT_push_tmp_val(TCGContext *s,
 							   TCGArg *args,
 							   TCGTemp *tmp,
 							   uint32_t *esp_offset)
@@ -2465,7 +2476,9 @@ inline void XT_log_ld_tmp(TCGContext *s,
 						  int dst_tmp_idx,
 						  uint32_t *esp_offset)
 {
+	// Logs src
 	XT_push_ld_src_tmp(s, args, src_tmp, dst_tmp, flag, src_tmp_idx, dst_tmp_idx, esp_offset);
+	// Logs dst
 	XT_push_tmp(s, args, dst_tmp, flag, dst_tmp_idx, esp_offset);
 
 	tcg_out_push(s, TCG_REG_ECX);

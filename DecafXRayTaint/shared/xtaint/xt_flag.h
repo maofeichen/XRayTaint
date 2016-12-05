@@ -58,6 +58,7 @@
 #define TCG_DEPOSIT_i32 0x50
 #define TCG_MOV_i32 0x51
 #define TCG_LOAD_i32 0x52
+#define TCG_LOAD_POINTER_i32 0x53
 
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0
