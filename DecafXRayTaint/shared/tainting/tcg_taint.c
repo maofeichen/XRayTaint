@@ -579,7 +579,7 @@ static inline int gen_taintcheck_insn(int search_pc)
               tcg_gen_ld_i32(t3, cpu_env, offsetof(OurCPUState,tempidx));
 
 #ifdef CONFIG_TCG_XTAINT
-			  if(XRAYTAINT_DEBUG){
+			  if(xt_enable_log_ir){
 				  // Consider only memory content is tainted.
 				  // t3 is now the shadow of content
 				  // loaded into shadow of destination.
@@ -604,7 +604,7 @@ static inline int gen_taintcheck_insn(int search_pc)
               tcg_gen_neg_i32(t0, t2);
 
 #ifdef CONFIG_TCG_XTAINT
-			  if(XRAYTAINT_DEBUG){
+			  if(xt_enable_log_ir){
 				  // ponter tainting, t0 is the shaow of pointer
 				  // loaded into shadow of destination.
 				  XT_log_ir(t0, orig1, orig0, XT_encode_flag(TCG_LOAD_POINTER_i32, IR_NORMAL) );
@@ -620,7 +620,7 @@ static inline int gen_taintcheck_insn(int search_pc)
               tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));
 
 #ifdef CONFIG_TCG_XTAINT
-			  if(XRAYTAINT_DEBUG){
+			  if(xt_enable_log_ir){
 				  // Still pointer is NOT tainting, only memory content is tainted.
 				  // Use arg0 instead of arg1, because at this time taints had already
 				  // loaded into shadow of destination.
@@ -633,7 +633,7 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));
 
 #ifdef CONFIG_TCG_XTAINT
-          if(XRAYTAINT_DEBUG){
+          if(xt_enable_log_ir){
         	  // Use arg0 instead of arg1, because at this time taints had already
         	  // loaded into shadow of destination.
 			  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
@@ -800,6 +800,19 @@ static inline int gen_taintcheck_insn(int search_pc)
             gen_opparam_ptr[-1] = mem_index; 
             gen_opparam_ptr[-2] = addr;
             gen_opparam_ptr[-3] = ret;
+
+#ifdef CONFIG_TCG_XTAINT
+            if (taint_store_pointers_enabled) {
+
+            } else{
+            	// when st pointer is turn off
+				if(XRAYTAINT_DEBUG){
+				  // src: ret, dst: addr
+				  XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32, IR_NORMAL) );
+				}
+            }
+#endif /* CONFIG_TCG_XTAINT */
+
           }
         } else
           tcg_abort();

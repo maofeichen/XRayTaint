@@ -2018,6 +2018,8 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				case IR_NORMAL:
 					if(IREncode == TCG_LOAD_i32)
 						XT_log_ld_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
+					else if(IREncode == TCG_STORE_i32)
+						XT_log_st_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 					else
 						XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 					break;
@@ -2060,6 +2062,8 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 				case IR_NORMAL:
 					if(IREncode == TCG_LOAD_i32)
 						XT_log_ld_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
+					else if(IREncode == TCG_STORE_i32)
+						XT_log_st_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 					else
 						XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 					break;
@@ -2098,6 +2102,8 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 					case IR_NORMAL:
 						if(IREncode == TCG_LOAD_i32)
 							XT_log_ld_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
+						else if(IREncode == TCG_STORE_i32)
+							XT_log_st_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 						else
 							XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 						break;
@@ -2312,6 +2318,68 @@ inline void XT_push_ld_src_tmp(TCGContext *s,
 	}
 }
 
+// push temporary: special hanlding for qemu_st dst tmp
+inline void XT_push_st_dst_tmp(TCGContext *s,
+							   TCGArg *args,
+							   TCGTemp *src_tmp,
+							   TCGTemp *dst_tmp,
+							   uint32_t flag,
+							   int src_tmp_idx,
+							   int dst_tmp_idx,
+							   uint32_t *esp_offset)
+{
+	switch(dst_tmp->val_type){
+		case TEMP_VAL_DEAD:
+			fprintf(stderr, "push tmp: temporary is dead, abort\n");
+			abort();
+			break;
+		case TEMP_VAL_MEM:
+		{
+			// push flag first
+			tcg_out_pushi(s, flag);
+			*esp_offset += 4;
+
+			// uses temporaries' val as addr
+			XT_push_tmp_val(s, args, dst_tmp, esp_offset);
+
+			// push val
+			// src tmp val is same as dst
+			XT_push_tmp_val(s, args, src_tmp, esp_offset);
+		}
+			break;
+		case TEMP_VAL_REG:
+		{
+			// push flag first
+			tcg_out_pushi(s, flag);
+			*esp_offset += 4;
+
+			// uses temporaries' val as addr
+			XT_push_tmp_val(s, args, dst_tmp, esp_offset);
+
+			// push val
+			XT_push_tmp_val(s, args, src_tmp, esp_offset);
+		}
+			break;
+		case TEMP_VAL_CONST:
+		{
+			// push flag first
+			tcg_out_pushi(s, flag);
+			*esp_offset += 4;
+
+			// uses temporaries' val as addr
+			XT_push_tmp_val(s, args, dst_tmp, esp_offset);
+
+			// push val
+			XT_push_tmp_val(s, args, src_tmp, esp_offset);
+		}
+			break;
+		default:
+			fprintf(stderr, "unknown temporary type: %d\n, abort", dst_tmp->val_type);
+			abort();
+			break;
+	}
+}
+
 inline void XT_push_tmp_val(TCGContext *s,
 							   TCGArg *args,
 							   TCGTemp *tmp,
@@ -2480,6 +2548,32 @@ inline void XT_log_ld_tmp(TCGContext *s,
 	XT_push_ld_src_tmp(s, args, src_tmp, dst_tmp, flag, src_tmp_idx, dst_tmp_idx, esp_offset);
 	// Logs dst
 	XT_push_tmp(s, args, dst_tmp, flag, dst_tmp_idx, esp_offset);
+
+	tcg_out_push(s, TCG_REG_ECX);
+	tcg_out_push(s, TCG_REG_EDX);
+	tcg_out_calli(s, (tcg_target_long)XT_write_src_dst_tmp);
+	tcg_out_pop(s, TCG_REG_EDX);
+	tcg_out_pop(s, TCG_REG_ECX);
+
+	// restore esp val due to push
+	tcg_out_addi(s, TCG_REG_ESP, 24);
+	*esp_offset -= 24;
+}
+
+// Log qemu_st temporaries
+inline void XT_log_st_tmp(TCGContext *s,
+						  TCGArg *args,
+						  TCGTemp *src_tmp,
+						  TCGTemp *dst_tmp,
+						  uint32_t flag,
+						  int src_tmp_idx,
+						  int dst_tmp_idx,
+						  uint32_t *esp_offset)
+{
+	// Log src
+	XT_push_tmp(s, args, src_tmp, flag, src_tmp_idx, esp_offset);
+	// Log dst
+	XT_push_st_dst_tmp(s, args, src_tmp, dst_tmp, flag, src_tmp_idx, dst_tmp_idx, esp_offset);
 
 	tcg_out_push(s, TCG_REG_ECX);
 	tcg_out_push(s, TCG_REG_EDX);
