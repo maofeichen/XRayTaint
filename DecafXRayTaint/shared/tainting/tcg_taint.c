@@ -577,6 +577,16 @@ static inline int gen_taintcheck_insn(int search_pc)
               t3 = tcg_temp_new_i32();
               /* Load taint from tempidx */
               tcg_gen_ld_i32(t3, cpu_env, offsetof(OurCPUState,tempidx));
+
+#ifdef CONFIG_TCG_XTAINT
+			  if(XRAYTAINT_DEBUG){
+				  // Consider only memory content is tainted.
+				  // t3 is now the shadow of content
+				  // loaded into shadow of destination.
+				  XT_log_ir(t3, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+			  }
+#endif /* CONFIG_TCG_XTAINT */
+
               /* Check for pointer taint */
 #ifndef TAINT_NEW_POINTER
               t_zero = tcg_temp_new_i32();
@@ -592,8 +602,18 @@ static inline int gen_taintcheck_insn(int search_pc)
               tcg_gen_and_i32(t2, t1, t4); //t2 = cond1 & cond2
 #endif
               tcg_gen_neg_i32(t0, t2);
+
+#ifdef CONFIG_TCG_XTAINT
+			  if(XRAYTAINT_DEBUG){
+				  // ponter tainting, t0 is the shaow of pointer
+				  // loaded into shadow of destination.
+				  XT_log_ir(t0, orig1, orig0, XT_encode_flag(TCG_LOAD_POINTER_i32, IR_NORMAL) );
+			  }
+#endif /* CONFIG_TCG_XTAINT */
+
               /* Combine pointer and tempidx taint */
               tcg_gen_or_i32(arg0, t0, t3);
+
 #endif /* TARGET_REG_BITS */
             } else
               /* Patch in opcode to load taint from tempidx */
