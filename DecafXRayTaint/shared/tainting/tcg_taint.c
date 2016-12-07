@@ -802,14 +802,25 @@ static inline int gen_taintcheck_insn(int search_pc)
             gen_opparam_ptr[-3] = ret;
 
 #ifdef CONFIG_TCG_XTAINT
-            if (taint_store_pointers_enabled) {
+            if(XRAYTAINT_DEBUG){
+                if (taint_store_pointers_enabled) {
+                	if(arg1){
+                		// is src value(arg0) tainted?
+                		XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32, IR_NORMAL) );
 
-            } else{
-            	// when st pointer is turn off
-				if(XRAYTAINT_DEBUG){
-				  // src: ret, dst: addr
-				  XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32, IR_NORMAL) );
-				}
+                		// pointer tainting, t0 is shadow
+                		// needs to be special handling
+                		XT_log_ir(t0, addr, ret, XT_encode_flag(TCG_STORE_POINTER_i32, IR_NORMAL) );
+                	} else{
+                		// st pointer is on, but no pointer tainting
+                		// src: ret, dst: addr
+                		XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32, IR_NORMAL) );
+                	}
+                } else{
+                	// when st pointer is turn off
+                	// src: ret, dst: addr
+                	XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32, IR_NORMAL) );
+                }
             }
 #endif /* CONFIG_TCG_XTAINT */
 
