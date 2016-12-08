@@ -607,7 +607,7 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));
 
 #ifdef CONFIG_TCG_XTAINT
-          if(XRAYTAINT_DEBUG){
+          if(xt_enable_log_ir){
         	  if (taint_load_pointers_enabled) {
         		  if(arg1){
     				  // Consider only memory content is tainted.
@@ -1008,8 +1008,31 @@ static inline int gen_taintcheck_insn(int search_pc)
           tcg_gen_setcond_i32(TCG_COND_NE, t2, t0, t_zero);
           tcg_gen_neg_i32(arg0, t2);
 
+#ifdef CONFIG_TCG_XTAINT
+          // log source before operation
+          if(xt_enable_log_ir){
+        	  // 1st src: orig1; 2nd src: orig2(position)
+        	  if(arg1)
+        		  XT_log_ir(arg1, orig1, 0, XT_encode_flag(TCG_SETCOND_i32, IR_FIRST_SOURCE) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, orig2, 0, XT_encode_flag(TCG_SETCOND_i32, IR_SECOND_SOURCE) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
           /* Reinsert original opcode */
           tcg_gen_setcond_i32(orig0, orig1, orig2, orig3);
+
+#ifdef CONFIG_TCG_XTAINT
+          // log destination after operation
+          if(xt_enable_log_ir){
+        	  // dst: orig0
+        	  if(arg1)
+        		  XT_log_ir(arg1, 0, orig0, XT_encode_flag(TCG_SETCOND_i32, IR_FIRST_DESTINATION) );
+        	  if(arg2)
+        		  XT_log_ir(arg2, 0, orig0, XT_encode_flag(TCG_SETCOND_i32, IR_SECOND_DESTINATION) );
+          }
+#endif /* CONFIG_TCG_XTAINT */
+
         }
         break;
 

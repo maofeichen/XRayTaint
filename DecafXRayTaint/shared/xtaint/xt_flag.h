@@ -61,6 +61,7 @@
 #define TCG_LOAD_POINTER_i32 0x53
 #define TCG_STORE_i32 0x54
 #define TCG_STORE_POINTER_i32 0x55
+#define TCG_SETCOND_i32 0x56
 
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0
