@@ -578,15 +578,6 @@ static inline int gen_taintcheck_insn(int search_pc)
               /* Load taint from tempidx */
               tcg_gen_ld_i32(t3, cpu_env, offsetof(OurCPUState,tempidx));
 
-#ifdef CONFIG_TCG_XTAINT
-			  if(xt_enable_log_ir){
-				  // Consider only memory content is tainted.
-				  // t3 is now the shadow of content
-				  // loaded into shadow of destination.
-				  XT_log_ir(t3, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
-			  }
-#endif /* CONFIG_TCG_XTAINT */
-
               /* Check for pointer taint */
 #ifndef TAINT_NEW_POINTER
               t_zero = tcg_temp_new_i32();
@@ -603,14 +594,6 @@ static inline int gen_taintcheck_insn(int search_pc)
 #endif
               tcg_gen_neg_i32(t0, t2);
 
-#ifdef CONFIG_TCG_XTAINT
-			  if(xt_enable_log_ir){
-				  // ponter tainting, t0 is the shaow of pointer
-				  // loaded into shadow of destination.
-				  XT_log_ir(t0, orig1, orig0, XT_encode_flag(TCG_LOAD_POINTER_i32, IR_NORMAL) );
-			  }
-#endif /* CONFIG_TCG_XTAINT */
-
               /* Combine pointer and tempidx taint */
               tcg_gen_or_i32(arg0, t0, t3);
 
@@ -619,24 +602,33 @@ static inline int gen_taintcheck_insn(int search_pc)
               /* Patch in opcode to load taint from tempidx */
               tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));
 
-#ifdef CONFIG_TCG_XTAINT
-			  if(xt_enable_log_ir){
-				  // Still pointer is NOT tainting, only memory content is tainted.
-				  // Use arg0 instead of arg1, because at this time taints had already
-				  // loaded into shadow of destination.
-				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
-			  }
-#endif /* CONFIG_TCG_XTAINT */
-
           } else
             /* Patch in opcode to load taint from tempidx */
             tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));
 
 #ifdef CONFIG_TCG_XTAINT
-          if(xt_enable_log_ir){
-        	  // Use arg0 instead of arg1, because at this time taints had already
-        	  // loaded into shadow of destination.
-			  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+          if(XRAYTAINT_DEBUG){
+        	  if (taint_load_pointers_enabled) {
+        		  if(arg1){
+    				  // Consider only memory content is tainted.
+    				  // t3 is now the shadow of content
+    				  // loaded into shadow of destination.
+    				  XT_log_ir(t3, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+
+    				  // ponter tainting, t0 is the shaow of pointer
+    				  // loaded into shadow of destination.
+    				  XT_log_ir(t0, orig1, orig0, XT_encode_flag(TCG_LOAD_POINTER_i32, IR_NORMAL) );
+        		  } else {
+        			  // Still pointer is NOT tainting, only memory content is tainted.
+    				  // Use arg0 instead of arg1, because at this time taints had already
+    				  // loaded into shadow of destination.
+    				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+        		  }
+        	  } else{
+        		  // Use arg0 instead of arg1, because at this time taints had already
+				  // loaded into shadow of destination.
+				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+        	  }
           }
 #endif /* CONFIG_TCG_XTAINT */
         }
@@ -802,7 +794,7 @@ static inline int gen_taintcheck_insn(int search_pc)
             gen_opparam_ptr[-3] = ret;
 
 #ifdef CONFIG_TCG_XTAINT
-            if(XRAYTAINT_DEBUG){
+            if(xt_enable_log_ir){
                 if (taint_store_pointers_enabled) {
                 	if(arg1){
                 		// is src value(arg0) tainted?
