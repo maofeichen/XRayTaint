@@ -181,6 +181,10 @@ static inline int gen_taintcheck_insn(int search_pc)
 #endif /* TARGET check */
   TCGv orig0, orig1, orig2, orig3, orig4, orig5;
 
+#ifdef CONFIG_TCG_XTAINT
+  uint32_t size_flag = 0;
+#endif /* CONFIG_TCG_XTAINT */
+
   /* Copy all of the existing ops/parms into a new buffer to back them up. */
   memcpy(gen_old_opc_buf, gen_old_opc_ptr, sizeof(uint16_t)*(nb_opc));
   memcpy(gen_old_opparam_buf, gen_old_opparam_ptr, sizeof(TCGArg)* (gen_opparam_ptr - gen_old_opparam_ptr));
@@ -608,26 +612,39 @@ static inline int gen_taintcheck_insn(int search_pc)
 
 #ifdef CONFIG_TCG_XTAINT
           if(xt_enable_log_ir){
+        	  switch(opc){
+        	  	  case INDEX_op_qemu_ld8u:
+        	  	  case INDEX_op_qemu_ld8s:
+        	  		  size_flag = XT_BYTE;
+        	  		  break;
+        	  	  case INDEX_op_qemu_ld16u:
+        	  	  case INDEX_op_qemu_ld16s:
+        	  		  size_flag = XT_WORD;
+        	  		  break;
+        	  	  case INDEX_op_qemu_ld32:
+        	  		  size_flag = XT_DOUBLE_WORD;
+        	  		  break;
+        	  }
         	  if (taint_load_pointers_enabled) {
         		  if(arg1){
     				  // Consider only memory content is tainted.
     				  // t3 is now the shadow of content
     				  // loaded into shadow of destination.
-    				  XT_log_ir(t3, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+    				  XT_log_ir(t3, orig1, orig0, XT_encode_flag(TCG_LOAD_i32 + size_flag, IR_NORMAL) );
 
     				  // ponter tainting, t0 is the shaow of pointer
     				  // loaded into shadow of destination.
-    				  XT_log_ir(t0, orig1, orig0, XT_encode_flag(TCG_LOAD_POINTER_i32, IR_NORMAL) );
+    				  XT_log_ir(t0, orig1, orig0, XT_encode_flag(TCG_LOAD_POINTER_i32 + size_flag, IR_NORMAL) );
         		  } else {
         			  // Still pointer is NOT tainting, only memory content is tainted.
     				  // Use arg0 instead of arg1, because at this time taints had already
     				  // loaded into shadow of destination.
-    				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+    				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32 + size_flag, IR_NORMAL) );
         		  }
         	  } else{
         		  // Use arg0 instead of arg1, because at this time taints had already
 				  // loaded into shadow of destination.
-				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32, IR_NORMAL) );
+				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32 + size_flag, IR_NORMAL) );
         	  }
           }
 #endif /* CONFIG_TCG_XTAINT */

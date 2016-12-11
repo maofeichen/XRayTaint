@@ -8,6 +8,11 @@
 // Encode of target register
 #define TARGET_ESP 4
 
+// Encode size
+#define XT_BYTE 0x1
+#define XT_WORD 0x2
+#define XT_DOUBLE_WORD 0x3
+
 // Encode of logging ir flag
 #define IR_FIRST_SOURCE 0x1
 #define IR_SECOND_SOURCE 0x2
@@ -57,11 +62,13 @@
 
 #define TCG_DEPOSIT_i32 0x50
 #define TCG_MOV_i32 0x51
+
 #define TCG_LOAD_i32 0x52
-#define TCG_LOAD_POINTER_i32 0x53
-#define TCG_STORE_i32 0x54
-#define TCG_STORE_POINTER_i32 0x55
-#define TCG_SETCOND_i32 0x56
+#define TCG_LOAD_POINTER_i32 0x56
+#define TCG_STORE_i32 0x5a
+#define TCG_STORE_POINTER_i32 0x5e
+
+#define TCG_SETCOND_i32 0x62
 
 /* Encode global temporary address */
 #define G_TEMP_UNKNOWN 0xFFF0
