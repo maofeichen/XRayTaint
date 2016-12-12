@@ -141,6 +141,29 @@ static uint8_t gen_old_liveness_metadata[OPC_BUF_SIZE];
 static void build_liveness_metadata(TCGContext *s);
 #endif /* USE_TCG_OPTIMIZATIONS */
 
+#ifdef CONFIG_TCG_XTAINT
+static inline void instrument_size_mark(uint16_t opc, uint32_t size_mark)
+{
+  switch(opc){
+	  case INDEX_op_qemu_ld8u:
+	  case INDEX_op_qemu_ld8s:
+		  XT_mark(size_mark, 1, 0);
+		  break;
+	  case INDEX_op_qemu_ld16u:
+	  case INDEX_op_qemu_ld16s:
+		  XT_mark(size_mark, 2, 0);
+		  break;
+	  case INDEX_op_qemu_ld32:
+		  XT_mark(size_mark, 4, 0);
+		  break;
+	  default:
+		  fprintf(stderr, "Unknown size mark, abort\n");
+		  abort();
+		  break;
+  }
+}
+#endif /* CONFIG_TCG_XTAINT */
+
 static inline int gen_taintcheck_insn(int search_pc)
 {
 #ifdef CONFIG_TCG_TAINT
@@ -289,6 +312,9 @@ static inline int gen_taintcheck_insn(int search_pc)
       case INDEX_op_brcond2_i32:
 #endif /* TCG_TARGET_REG_BITS */
       case INDEX_op_brcond_i64:
+#ifdef CONFIG_TCG_XTAINT
+      case INDEX_op_XT_mark:
+#endif /* CONFIG_TCG_XTAINT */
         break;
 
       case INDEX_op_discard:   // Remove associated shadow reg
@@ -611,20 +637,26 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));
 
 #ifdef CONFIG_TCG_XTAINT
+          if(xt_enable_size_mark){
+        	  instrument_size_mark(opc, XT_SIZE_BEGIN);
+          }
+
           if(xt_enable_log_ir){
-        	  switch(opc){
-        	  	  case INDEX_op_qemu_ld8u:
-        	  	  case INDEX_op_qemu_ld8s:
-        	  		  size_flag = XT_BYTE;
-        	  		  break;
-        	  	  case INDEX_op_qemu_ld16u:
-        	  	  case INDEX_op_qemu_ld16s:
-        	  		  size_flag = XT_WORD;
-        	  		  break;
-        	  	  case INDEX_op_qemu_ld32:
-        	  		  size_flag = XT_DOUBLE_WORD;
-        	  		  break;
-        	  }
+
+//        	  switch(opc){
+//        	  	  case INDEX_op_qemu_ld8u:
+//        	  	  case INDEX_op_qemu_ld8s:
+//        	  		  size_flag = XT_BYTE;
+//        	  		  break;
+//        	  	  case INDEX_op_qemu_ld16u:
+//        	  	  case INDEX_op_qemu_ld16s:
+//        	  		  size_flag = XT_WORD;
+//        	  		  break;
+//        	  	  case INDEX_op_qemu_ld32:
+//        	  		  size_flag = XT_DOUBLE_WORD;
+//        	  		  break;
+//        	  }
+
         	  if (taint_load_pointers_enabled) {
         		  if(arg1){
     				  // Consider only memory content is tainted.
@@ -646,6 +678,10 @@ static inline int gen_taintcheck_insn(int search_pc)
 				  // loaded into shadow of destination.
 				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32 + size_flag, IR_NORMAL) );
         	  }
+          }
+
+          if(xt_enable_size_mark){
+        	  instrument_size_mark(opc, XT_SIZE_END);
           }
 #endif /* CONFIG_TCG_XTAINT */
         }

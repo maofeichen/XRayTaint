@@ -2130,6 +2130,39 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 	esp_offset -= 4;
 }
 
+// backend of XT_mark
+// args:
+//	args[0]: mark encode
+//	args[1]: val1
+//	args[2]: val2
+static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
+{
+	switch(args[0]){
+		case XT_SIZE_BEGIN:
+		case XT_SIZE_END:
+			XT_push_mark(s, args);
+			break;
+		default:
+			fprintf(stderr, "Unknown mark, abort\n");
+			abort();
+			break;
+	}
+
+	tcg_out_calli(s, (tcg_target_long)XT_write_mark);
+
+	// restor stack
+	switch(args[0]){
+		case XT_SIZE_BEGIN:
+		case XT_SIZE_END:
+			tcg_out_addi(s, TCG_REG_ESP, 0xc);
+			break;
+		default:
+			fprintf(stderr, "Unknown mark, abort\n");
+			abort();
+			break;
+	}
+}
+
 // push temporary: <flag, addr, val> to stack
 // for later writes to files
 inline void XT_push_tmp(TCGContext *s,
@@ -2389,9 +2422,9 @@ inline void XT_push_st_dst_tmp(TCGContext *s,
 }
 
 inline void XT_push_tmp_val(TCGContext *s,
-							   TCGArg *args,
-							   TCGTemp *tmp,
-							   uint32_t *esp_offset)
+							TCGArg *args,
+							TCGTemp *tmp,
+							uint32_t *esp_offset)
 {
 	switch(tmp->val_type){
 		case TEMP_VAL_DEAD:
@@ -2439,6 +2472,14 @@ inline void XT_push_tmp_val(TCGContext *s,
 			abort();
 			break;
 	}
+}
+
+inline void XT_push_mark(TCGContext *s,
+		   	   	   	   	 TCGArg *args)
+{
+	tcg_out_pushi(s, args[0]);  // push mark encode
+	tcg_out_pushi(s, args[1]);  // push val1
+	tcg_out_pushi(s, args[2]);  // push val2
 }
 
 // Encode TCG global temporaries

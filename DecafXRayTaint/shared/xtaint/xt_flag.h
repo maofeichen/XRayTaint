@@ -29,6 +29,10 @@
 #define IR_SIXTH_DESTINATION 0xc
 #define IR_NORMAL 0xd
 
+// Size mark
+#define XT_SIZE_BEGIN 0x20
+#define XT_SIZE_END 0x24
+
 // Encode IR
 #define TCG_SHL 0x36
 #define TCG_SHR 0x37
