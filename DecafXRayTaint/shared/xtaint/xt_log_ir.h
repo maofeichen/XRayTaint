@@ -18,10 +18,6 @@ extern int XRAYTAINT_DEBUG;
 extern int xt_enable_log_ir;
 extern int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data);
 
-// Enable/disable xraytaint mark
-extern int xt_enable_size_mark;
-extern int xt_do_size_mark(Monitor *mon, const QDict *qdict, QObject **ret_data);
-
 // Instument xraytaint log ir
 extern inline void XT_log_ir(TCGv srcShadow, TCGv src, TCGv dst, uint32_t flag);
 // Instrument xraytaint mark

@@ -29,24 +29,6 @@ int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data){
     return 0;
 }
 
-int xt_enable_size_mark = 0;
-int xt_do_size_mark(Monitor *mon, const QDict *qdict, QObject **ret_data)
-{
-    if (!taint_tracking_enabled)
-        monitor_printf(default_mon, "Ignored, taint tracking is disabled\n");
-    else {
-        CPUState *env;
-        DECAF_stop_vm();
-        env = cpu_single_env ? cpu_single_env : first_cpu;
-        xt_enable_size_mark = qdict_get_bool(qdict, "load");
-        DECAF_start_vm();
-        tb_flush(env);
-        monitor_printf(default_mon, "XRay Taint size mark changed -> %s\n",
-                xt_enable_size_mark ? "ON " : "OFF");
-    }
-    return 0;
-}
-
 // Instrument XT ir
 inline void XT_log_ir(TCGv srcShadow, TCGv src, TCGv dst, uint32_t flag)
 {

@@ -140,7 +140,7 @@ http://code.google.com/p/decaf-platform/
         .mhandler.cmd_new = xt_do_log_ir,
 },
 {
-        .name       = "xtaint_size_mark",
+        .name       = "xraytaint_size_mark",
         .args_type  = "load:b",
         .params     = "on|off",
         .help       = "Turn on/off xtaint size mark for each guest insn",

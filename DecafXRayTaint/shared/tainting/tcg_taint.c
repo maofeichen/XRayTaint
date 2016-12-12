@@ -22,6 +22,7 @@
 #ifdef CONFIG_TCG_XTAINT
 #include "xtaint/xt_flag.h"
 #include "xtaint/xt_log_ir.h"
+#include "xtaint/xt_size_mark.h"
 #endif /* CONFIG_TCG_XTAINT */
 
 /* Target-specific metadata buffers are extern'd here so that the taint
@@ -140,29 +141,6 @@ static void DUMMY_TAINT(int nb_oargs, int nb_args)
 static uint8_t gen_old_liveness_metadata[OPC_BUF_SIZE];
 static void build_liveness_metadata(TCGContext *s);
 #endif /* USE_TCG_OPTIMIZATIONS */
-
-#ifdef CONFIG_TCG_XTAINT
-static inline void instrument_size_mark(uint16_t opc, uint32_t size_mark)
-{
-  switch(opc){
-	  case INDEX_op_qemu_ld8u:
-	  case INDEX_op_qemu_ld8s:
-		  XT_mark(size_mark, 1, 0);
-		  break;
-	  case INDEX_op_qemu_ld16u:
-	  case INDEX_op_qemu_ld16s:
-		  XT_mark(size_mark, 2, 0);
-		  break;
-	  case INDEX_op_qemu_ld32:
-		  XT_mark(size_mark, 4, 0);
-		  break;
-	  default:
-		  fprintf(stderr, "Unknown size mark, abort\n");
-		  abort();
-		  break;
-  }
-}
-#endif /* CONFIG_TCG_XTAINT */
 
 static inline int gen_taintcheck_insn(int search_pc)
 {
@@ -637,25 +615,10 @@ static inline int gen_taintcheck_insn(int search_pc)
             tcg_gen_ld_i32(arg0, cpu_env, offsetof(OurCPUState,tempidx));
 
 #ifdef CONFIG_TCG_XTAINT
-          if(xt_enable_size_mark){
-        	  instrument_size_mark(opc, XT_SIZE_BEGIN);
-          }
-
           if(xt_enable_log_ir){
-
-//        	  switch(opc){
-//        	  	  case INDEX_op_qemu_ld8u:
-//        	  	  case INDEX_op_qemu_ld8s:
-//        	  		  size_flag = XT_BYTE;
-//        	  		  break;
-//        	  	  case INDEX_op_qemu_ld16u:
-//        	  	  case INDEX_op_qemu_ld16s:
-//        	  		  size_flag = XT_WORD;
-//        	  		  break;
-//        	  	  case INDEX_op_qemu_ld32:
-//        	  		  size_flag = XT_DOUBLE_WORD;
-//        	  		  break;
-//        	  }
+              if(xt_enable_size_mark){
+            	  size_flag = assign_size_flag(opc);
+              }
 
         	  if (taint_load_pointers_enabled) {
         		  if(arg1){
@@ -678,10 +641,6 @@ static inline int gen_taintcheck_insn(int search_pc)
 				  // loaded into shadow of destination.
 				  XT_log_ir(arg0, orig1, orig0, XT_encode_flag(TCG_LOAD_i32 + size_flag, IR_NORMAL) );
         	  }
-          }
-
-          if(xt_enable_size_mark){
-        	  instrument_size_mark(opc, XT_SIZE_END);
           }
 #endif /* CONFIG_TCG_XTAINT */
         }
@@ -848,23 +807,27 @@ static inline int gen_taintcheck_insn(int search_pc)
 
 #ifdef CONFIG_TCG_XTAINT
             if(xt_enable_log_ir){
+            	if(xt_enable_size_mark){
+            		size_flag = assign_size_flag(opc);
+            	}
+
                 if (taint_store_pointers_enabled) {
                 	if(arg1){
                 		// is src value(arg0) tainted?
-                		XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32, IR_NORMAL) );
+                		XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32 + size_flag, IR_NORMAL) );
 
                 		// pointer tainting, t0 is shadow
                 		// needs to be special handling
-                		XT_log_ir(t0, addr, ret, XT_encode_flag(TCG_STORE_POINTER_i32, IR_NORMAL) );
+                		XT_log_ir(t0, addr, ret, XT_encode_flag(TCG_STORE_POINTER_i32 + size_flag, IR_NORMAL) );
                 	} else{
                 		// st pointer is on, but no pointer tainting
                 		// src: ret, dst: addr
-                		XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32, IR_NORMAL) );
+                		XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32 + size_flag, IR_NORMAL) );
                 	}
                 } else{
                 	// when st pointer is turn off
                 	// src: ret, dst: addr
-                	XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32, IR_NORMAL) );
+                	XT_log_ir(arg0, ret, addr, XT_encode_flag(TCG_STORE_i32 + size_flag, IR_NORMAL) );
                 }
             }
 #endif /* CONFIG_TCG_XTAINT */
