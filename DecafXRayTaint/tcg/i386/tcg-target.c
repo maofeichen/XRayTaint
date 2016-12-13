@@ -2146,6 +2146,7 @@ static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 	switch(args[0]){
 		case XT_SIZE_BEGIN:
 		case XT_SIZE_END:
+		case XT_INSN_CALL_SEC:
 			XT_push_mark(s, args);
 			break;
 		case XT_INSN_CALL:
@@ -2173,6 +2174,7 @@ static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 		case XT_SIZE_BEGIN:
 		case XT_SIZE_END:
 		case XT_INSN_CALL:
+		case XT_INSN_CALL_SEC:
 			tcg_out_addi(s, TCG_REG_ESP, 0xc);
 			break;
 		default:

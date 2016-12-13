@@ -24,7 +24,8 @@ void xt_flushFile(FILE *xt_log)
 	while(idx < xt_curr_record){
 		if(*idx == XT_SIZE_BEGIN || \
 		   *idx == XT_SIZE_END	|| \
-		   *idx == XT_INSN_CALL){
+		   *idx == XT_INSN_CALL || \
+		   *idx == XT_INSN_CALL_SEC){
 			for(i = 0; i < 3; i++){
 				fprintf(xt_log, "%x\t", *(uint32_t*) idx);
 				idx += 4;

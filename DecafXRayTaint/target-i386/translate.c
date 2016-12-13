@@ -6457,7 +6457,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                 // handle in the XT_write_mark() function
             	XT_mark(XT_INSN_CALL, cpu_regs[R_ESP], cpu_T[0]);
                 // record callee addr as well
-//            	XT_mark(XT_INSN_CALL_SEC, tval, 0);
+            	XT_mark(XT_INSN_CALL_SEC, tval, 0);
             	gen_push_T0(s);
             }
 #endif /* CONFIG_TCG_XTAINT */
