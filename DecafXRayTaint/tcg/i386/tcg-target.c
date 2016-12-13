@@ -2174,6 +2174,22 @@ static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 	        tcg_out_pushi(s, args[2]);
 			esp_offset += 4;
 			break;
+		case XT_INSN_CALL_FF2_SEC:
+			reip = &s->temps[args[1]];
+
+	        tcg_out_pushi(s, args[0]);
+			esp_offset += 4;
+
+			// push eip of call (0xff/2)
+			// error when try to instrument this IR, disable temporarily
+			// XT_push_tmp_val(s, args, reip, &esp_offset);
+	        tcg_out_pushi(s, args[1]);
+	        esp_offset += 4;
+
+	        // 3rd args is not used
+	        tcg_out_pushi(s, args[2]);
+	        esp_offset += 4;
+			break;
 		default:
 			fprintf(stderr, "Unknown mark, abort\n");
 			abort();
@@ -2189,6 +2205,7 @@ static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 		case XT_INSN_CALL:
 		case XT_INSN_CALL_SEC:
 		case XT_INSN_CALL_FF2:
+		case XT_INSN_CALL_FF2_SEC:
 			tcg_out_addi(s, TCG_REG_ESP, 0xc);
 			break;
 		default:

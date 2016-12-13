@@ -4805,7 +4805,9 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                 // record esp, top of stack (ret addr) after ret
             	XT_mark(XT_INSN_CALL_FF2, cpu_regs[R_ESP], next_eip);
                 // record callee addr as well
-//            	XT_mark(XT_INSN_CALL_FF2, cpu_T[0], 0);
+            	// error when try to instrument this IR, disable temporarily
+            	// XT_mark(XT_INSN_CALL_FF2_SEC, cpu_T[0], 0);
+            	XT_mark(XT_INSN_CALL_FF2_SEC, 0, 0);
             }
 #endif /* CONFIG_TCG_XTAINT */
             gen_eob(s);
