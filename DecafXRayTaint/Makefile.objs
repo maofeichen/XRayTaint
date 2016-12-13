@@ -437,7 +437,7 @@ libdecaf-y+=function_map.o
 libdecaf-y+=tainting/reduce_taint.o tainting/taintcheck_opt.o tainting/tainting.o
 libdecaf-y+=tainting/taint_memory.o tainting/tcg_taint.o 
 # Add xtaint folder -MChen
-libdecaf-y+=xtaint/xt_log.o xtaint/xt_main.o xtaint/xt_log_ir.o xtaint/xt_size_mark.o
+libdecaf-y+=xtaint/xt_log.o xtaint/xt_main.o xtaint/xt_log_ir.o xtaint/xt_size_mark.o xtaint/xt_func_mark.o
 libdecaf-y+=DECAF_vm_compress.o
 libdecaf-y+=utils/HashtableWrapper.o
 libdecaf-y+=utils/Output.o
