@@ -12,7 +12,7 @@
 
 int XRAYTAINT_DEBUG = 1;
 
-int xt_enable_log_ir = 1;
+int xt_enable_log_ir = 0;
 int xt_do_log_ir(Monitor *mon, const QDict *qdict, QObject **ret_data){
     if (!taint_tracking_enabled)
         monitor_printf(default_mon, "Ignored, taint tracking is disabled\n");
@@ -36,7 +36,7 @@ inline void XT_log_ir(TCGv srcShadow, TCGv src, TCGv dst, uint32_t flag)
 }
 
 // Instrument XRayTaint mark
-inline void XT_mark(uint32_t flag, uint32_t val1, uint32_t val2)
+inline void XT_mark(TCGv_i32 flag, TCGv_i32 val1, TCGv_i32 val2)
 {
 	tcg_gen_XT_mark(flag, val1, val2);
 }
@@ -242,6 +242,10 @@ void XT_write_mark()
 	uint32_t *val2 = (uint32_t*)(ebp + offset);
 	uint32_t *val1 = (uint32_t*)(ebp + offset + 4);
 	uint32_t *flag = (uint32_t*)(ebp + offset + 8);
+
+	// special handing for Call mark
+	if(*flag == XT_INSN_CALL)
+		*val1 -= 4;
 
 	*(uint32_t *)xt_curr_record = *flag;
 	xt_curr_record += 4;

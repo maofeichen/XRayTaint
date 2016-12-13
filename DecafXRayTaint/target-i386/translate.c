@@ -39,6 +39,8 @@
 #endif /* CONFIG_TCG_TAINT */
 
 #ifdef CONFIG_TCG_XTAINT
+#include "shared/xtaint/xt_flag.h"
+#include "shared/xtaint/xt_func_mark.h"
 #include "shared/xtaint/xt_log_ir.h"
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -6445,6 +6447,20 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
                 tval &= 0xffffffff;
             gen_movtl_T0_im(next_eip);
             gen_push_T0(s);
+#ifdef CONFIG_TCG_XTAINT
+            if(xt_enable_func_mark){
+                gen_pop_T0(s);
+                gen_pop_update(s);
+
+                // record esp, top of stack (ret addr) after ret
+                // since pop, the real esp value and log value is offset 4 bytes
+                // handle in the XT_write_mark() function
+            	XT_mark(XT_INSN_CALL, cpu_regs[R_ESP], cpu_T[0]);
+                // record callee addr as well
+//            	XT_mark(XT_INSN_CALL_SEC, tval, 0);
+            	gen_push_T0(s);
+            }
+#endif /* CONFIG_TCG_XTAINT */
             gen_jmp(s, tval);
         }
         break;

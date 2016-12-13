@@ -2385,11 +2385,11 @@ static inline void tcg_gen_XT_log_ir_i32(TCGv_i32 srcShadow,
 	tcg_gen_op4_i32(INDEX_op_XT_log_ir_i32, srcShadow, src, dst, flag);
 }
 
-static inline void tcg_gen_XT_mark(tcg_target_long flag,
-                                   tcg_target_long val1,
-                                   tcg_target_long val2)
+static inline void tcg_gen_XT_mark(TCGv_i32 flag,
+								   TCGv_i32 val1,
+								   TCGv_i32 val2)
 {
-	tcg_gen_op3i_i32(INDEX_op_XT_mark, flag, val1, val2);
+	tcg_gen_op3_i32(INDEX_op_XT_mark, flag, val1, val2);
 }
 #endif /* CONFIG_TCG_XTAINT */
 

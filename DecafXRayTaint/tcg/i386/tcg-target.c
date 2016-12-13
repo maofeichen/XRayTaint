@@ -2137,10 +2137,28 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 //	args[2]: val2
 static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 {
+	TCGTemp *reip, *resp;
+    int esp_offset = 0;
+
+    tcg_out_push(s, tcg_target_call_iarg_regs[0]);
+    esp_offset += 4;
+
 	switch(args[0]){
 		case XT_SIZE_BEGIN:
 		case XT_SIZE_END:
 			XT_push_mark(s, args);
+			break;
+		case XT_INSN_CALL:
+	        resp = &s->temps[args[1]];
+	        reip = &s->temps[args[2]];
+
+	        tcg_out_pushi(s, args[0]);
+			esp_offset += 4;
+
+			// push esp value into stack
+			XT_push_tmp_val(s, args, resp, &esp_offset);
+			// push next_eip value into stack
+			XT_push_tmp_val(s, args, reip, &esp_offset);
 			break;
 		default:
 			fprintf(stderr, "Unknown mark, abort\n");
@@ -2154,6 +2172,7 @@ static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 	switch(args[0]){
 		case XT_SIZE_BEGIN:
 		case XT_SIZE_END:
+		case XT_INSN_CALL:
 			tcg_out_addi(s, TCG_REG_ESP, 0xc);
 			break;
 		default:
@@ -2161,6 +2180,9 @@ static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 			abort();
 			break;
 	}
+
+	tcg_out_pop(s, tcg_target_call_iarg_regs[0]);
+	esp_offset -= 4;
 }
 
 // push temporary: <flag, addr, val> to stack
