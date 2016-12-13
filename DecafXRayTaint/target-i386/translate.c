@@ -4800,6 +4800,14 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
             gen_movtl_T1_im(next_eip);
             gen_push_T1(s);
             gen_op_jmp_T0();
+#ifdef CONFIG_TCG_XTAINT
+            if(xt_enable_func_mark){
+                // record esp, top of stack (ret addr) after ret
+            	XT_mark(XT_INSN_CALL_FF2, cpu_regs[R_ESP], next_eip);
+                // record callee addr as well
+//            	XT_mark(XT_INSN_CALL_FF2, cpu_T[0], 0);
+            }
+#endif /* CONFIG_TCG_XTAINT */
             gen_eob(s);
             break;
         case 3: /* lcall Ev */
