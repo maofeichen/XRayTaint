@@ -6377,6 +6377,18 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         if (s->dflag == 0)
             gen_op_andl_T0_ffff();
 
+#ifdef CONFIG_TCG_XTAINT
+		if(xt_enable_func_mark){
+			// record esp, top of stack (ret addr) before ret
+			XT_mark(XT_INSN_RET, cpu_regs[R_ESP], cpu_T[0]);
+
+			// record callee addr as well
+			// error when try to instrument this IR, disable temporarily
+			// XT_mark(XT_INSN_CALL_FF2_SEC, cpu_T[0], 0);
+//			XT_mark(XT_INSN_CALL_FF2_SEC, 0, 0);
+		}
+#endif /* CONFIG_TCG_XTAINT */
+
         gen_op_jmp_T0();
         gen_eob(s);
         break;
@@ -6385,6 +6397,21 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
         gen_pop_update(s);
         if (s->dflag == 0)
             gen_op_andl_T0_ffff();
+
+#ifdef CONFIG_TCG_XTAINT
+		if(xt_enable_func_mark){
+			// record esp, top of stack (ret addr) before ret
+			// because instrument after pop, but we want to log esp
+			// before pop, thus the log value will be 4 bytes > expect
+			// handle in XT_write_mark()
+			XT_mark(XT_INSN_RET, cpu_regs[R_ESP], cpu_T[0]);
+
+			// record callee addr as well
+			// error when try to instrument this IR, disable temporarily
+			// XT_mark(XT_INSN_CALL_FF2_SEC, cpu_T[0], 0);
+//			XT_mark(XT_INSN_CALL_FF2_SEC, 0, 0);
+		}
+#endif /* CONFIG_TCG_XTAINT */
 
         gen_op_jmp_T0();
         gen_eob(s);

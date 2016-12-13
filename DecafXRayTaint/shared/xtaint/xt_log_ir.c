@@ -244,7 +244,8 @@ void XT_write_mark()
 	uint32_t *flag = (uint32_t*)(ebp + offset + 8);
 
 	// special handing for Call mark
-	if(*flag == XT_INSN_CALL)
+	if(*flag == XT_INSN_CALL || \
+	   *flag == XT_INSN_RET)
 		*val1 -= 4;
 
 	*(uint32_t *)xt_curr_record = *flag;
