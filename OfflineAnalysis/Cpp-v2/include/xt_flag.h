@@ -22,7 +22,14 @@ namespace flag
     const string XT_RET_INSN_SEC    = "19";
 
     const string TCG_QEMU_LD        = "52";
+    const string TCG_QEMU_LD_POINTER	= "56";
     const string TCG_QEMU_ST        = "5a";
+    const string TCG_QEMU_ST_POINTER	= "5e";
+
+    const int NUM_TCG_LD			= 0x52;
+    const int NUM_TCG_LD_POINTER	= 0x56;
+    const int NUM_TCG_ST			= 0x5a;
+    const int NUM_TCG_ST_POINTER	= 0x5e;
 
     const string TCG_ADD            = "3b";
     const string TCG_XOR            = "47";

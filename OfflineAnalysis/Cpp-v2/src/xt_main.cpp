@@ -260,13 +260,17 @@ void testCaseDup(string logPath, bool isForceAdd)
 
     // preprocess
     XT_PreProcess xtPreProc;
-    // xtLog = xtPreProc.clean_size_mark(xtLog);
-    xtLog = xtPreProc.clean_empty_function_mark(xtLog);
+    // xtLog = xtPreProc.clean_size_mark(xtLog); Not needed any more
+
+    // There is a bug
+    // xtLog = xtPreProc.clean_empty_function_mark(xtLog);
     xtLog = xtPreProc.clean_nonempty_function_mark(xtLog);
-    xtFile.write(XT_RESULT_PATH + logPath + XT_PREPROCESS + XT_FILE_EXT, xtLog);
+    // xtFile.write(XT_RESULT_PATH + logPath + XT_PREPROCESS + XT_FILE_EXT, xtLog);
 
     // add memory size infomation
-    // xtLog = XT_PreProcess::add_mem_size_info(xtLog);
+
+    // xtLog = XT_PreProcess::add_mem_size_info(xtLog); Not needed
+    xtLog = xtPreProc.parseMemSizeInfo(xtLog);
     // xtFile.write(XT_RESULT_PATH + logPath + XT_ADD_SIZE_INFO + XT_FILE_EXT, xtLog);
 
     // buffer liveness analysis

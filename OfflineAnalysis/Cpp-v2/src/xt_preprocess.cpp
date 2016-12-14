@@ -182,7 +182,16 @@ std::vector<Rec> XT_PreProcess::convertToRec(std::vector<std::string> &log)
     return v_rec;
 } 
 
-// for each qemu ld/st record, add size infor to the end of each
+// Parse size info for qemu_ld/st record
+std::vector<string> XT_PreProcess::parseMemSizeInfo(std::vector<std::string> &v)
+{
+	string recFlag;
+	for(vector<string>::iterator it = v.begin(); it != v.end(); ++it){
+		recFlag = (*it).substr(0,2);
+	}
+}
+
+// for each qemu ld/st record, add size info to the end of each
 vector<string> XT_PreProcess::add_mem_size_info(vector<string> &v)
 {
     int idx;
