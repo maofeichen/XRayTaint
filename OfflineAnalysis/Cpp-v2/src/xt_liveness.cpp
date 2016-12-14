@@ -7,6 +7,8 @@
 #include "xt_liveness.h"
 #include "xt_util.h"
 
+XT_Liveness::XT_Liveness(){}
+
 // analyzes alive buffers for each function call given a xtlog.
 // For those buffers are alive for multiple nested function call,
 // they are ONLY considerred alive in the innermost function call.
@@ -133,15 +135,27 @@ vector<string> XT_Liveness::analyze_alive_buffer_per_function(vector<string> &v)
     v_new.push_back(v[1]);
 
     for(vector<string>::iterator it = v.begin() + 2; it != v.end() - 2; ++it){
-        if(XT_Util::equal_mark(*it, flag::TCG_QEMU_LD)){
-            v_ld = XT_Util::split((*it).c_str(), '\t');
-            s_mem_addr = v_ld[1];
-            i_mem_addr = std::stoul(s_mem_addr, nullptr, 16);
+        // if(XT_Util::equal_mark(*it, flag::TCG_QEMU_LD)){
+        //     v_ld = XT_Util::split((*it).c_str(), '\t');
+        //     s_mem_addr = v_ld[1];
+        //     i_mem_addr = std::stoul(s_mem_addr, nullptr, 16);
 
-            if(is_mem_alive(i_func_esp, i_mem_addr))
-                v_new.push_back(*it);
-        }
-        else if(XT_Util::equal_mark(*it, flag::TCG_QEMU_ST)){
+        //     if(is_mem_alive(i_func_esp, i_mem_addr))
+        //         v_new.push_back(*it);
+        // }
+        // else if(XT_Util::equal_mark(*it, flag::TCG_QEMU_ST)){
+        //     v_st = XT_Util::split((*it).c_str(), '\t');
+        //     s_mem_addr = v_st[4];
+        //     i_mem_addr = std::stoul(s_mem_addr, nullptr, 16);
+        //     if(is_mem_alive(i_func_esp, i_mem_addr))
+        //         v_new.push_back(*it);
+        // }
+        
+        // Based on the paper, the buffers should: 
+        // 1) alive
+        // 2) be updated in the function call; that is, is the destination
+        //    instead of source
+        if(XT_Util::equal_mark(*it, flag::TCG_QEMU_ST)){
             v_st = XT_Util::split((*it).c_str(), '\t');
             s_mem_addr = v_st[4];
             i_mem_addr = std::stoul(s_mem_addr, nullptr, 16);
@@ -335,4 +349,21 @@ vector<Func_Call_Cont_Buf_t> XT_Liveness::filter_continue_buffer(vector<Func_Cal
     }
 
     return v_new;
+}
+
+// Force add taint buffer as alive buffer into the liveness analysis result
+// Currently add it to the 1st buffer set
+void XT_Liveness::forceAddTaintBuffer(vector<Func_Call_Cont_Buf_t> &vFCallContBuf, 
+                                      unsigned long beginAddr, unsigned long size)
+{
+    // Func_Call_Cont_Buf_t fCallContBuf;
+    // vector<Func_Call_Cont_Buf_t> vRes;
+
+    Cont_Buf_t contBuf;
+    contBuf.begin_addr = beginAddr;
+    contBuf.size = size;
+
+    vFCallContBuf[0].cont_buf.push_back(contBuf);
+
+    // return vRes;
 }

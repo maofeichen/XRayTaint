@@ -111,3 +111,27 @@ void XT_File::write_all_propagate_result(string path, vector<NodePropagate> &all
     } else
         cout << "error open file: " << path << endl;
 }
+
+void XT_File::writeAvalancheResult(std::string p, std::vector<AvalancheResBetweenInAndOut> &vAvalRes)
+{
+    SearchAvalanche sa;
+
+    freopen(p.c_str(), "w", stdout);
+    if(!vAvalRes.empty() ){
+        vector<AvalancheResBetweenInAndOut>::iterator it = vAvalRes.begin();
+        for(; it != vAvalRes.end(); ++it){
+            cout << "---------- ---------- ---------- ----------" << endl;
+            sa.printAvalResBetweenInAndOut(*it);
+        }
+    }
+    fclose(stdout);
+
+    // ofstream file(p.c_str(), "w",stdout);
+    // if(file.is_open() ){
+    //     if(!vAvalRes.empty() ){
+    //         sa.printAvalResBetweenInAndOut(vAvalRes);
+    //     }
+    //     file.close();
+    // } else
+    //     cout << "error open file: " << p << endl;
+}

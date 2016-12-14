@@ -4,11 +4,18 @@
 #include "xt_data.h"
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 struct Buffer
 {
 	unsigned long beginAddr;
 	unsigned int size;
+};
+
+struct BufferInOut
+{
+	Buffer in;
+	Buffer out;
 };
 
 struct FunctionCallBuffer
@@ -42,11 +49,12 @@ public:
 	// ~SearchAvalanche();
 	SearchAvalanche(std::vector<Func_Call_Cont_Buf_t> v_funcCallContBuf, 
 					std::vector<Rec> logAesRec);
-	void searchAvalanche();
+	std::vector<AvalancheResBetweenInAndOut> searchAvalanche();
 	void searchAvalancheDebug();
 	void printAvalResBetweenInAndOut(AvalancheResBetweenInAndOut &avalResInOut);
-	void printFunctionCallBuffer(FunctionCallBuffer &a);
 	void printAvalancheRes(AvalancheRes &avalRes);
+	void printFunctionCallBuffer(FunctionCallBuffer &a);
+	void printFuncCallContBuf(std::vector<Func_Call_Cont_Buf_t> &vFuncCallContBuf);
 	void printBuffer(Buffer &a);
 
 private:
@@ -55,11 +63,14 @@ private:
 	const unsigned long KERNEL_ADDR			= 0xC0000000;
 	const unsigned int 	VALID_AVALANCHE_LEN	= 8;
 
+	inline BufferInOut assignBufInOut(FunctionCallBuffer &in, FunctionCallBuffer &out);
 	inline void clearAvalacheResult(AvalancheRes &avalRes, Buffer &avalIn, std::vector<Buffer> &vAvalOut);
+	inline bool isDuplBufInOut(BufferInOut &bufInOut, std::vector<BufferInOut> &vBufInOut);
 	inline std::string getInsnAddr(unsigned int &idx, std::vector<Rec> &vRec);
 	inline bool isKernelAddress(unsigned int addr);
 	inline bool isMarkMatch(std::string &mark, Rec &r);
 	inline bool isInRange(unsigned long &addr, Node &node);
+	inline bool isSameBuffer(FunctionCallBuffer &a, FunctionCallBuffer &b);
 	inline bool isSameFunctionCall(FunctionCallBuffer &a, FunctionCallBuffer &b);
 	inline bool isSameNode(NodePropagate &a, NodePropagate &b);
 	inline void saveAvalancheResult(AvalancheRes &avalRes, Buffer &avalIn, std::vector<Buffer> &vAvalOut);

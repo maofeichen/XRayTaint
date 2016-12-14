@@ -474,8 +474,8 @@ inline void Propagate::insert_propagate_result(Node &n, std::unordered_set<Node,
 // else otherwise
 //      case 1 - dst.addr == current record src.addr
 inline bool Propagate::is_valid_propagate(NodePropagate &currNode, 
-                                                                    Rec &currRec,
-                                                                    vector<Rec> &v_rec)
+                                          Rec &currRec,
+                                          vector<Rec> &v_rec)
 {
     bool isValidPropagate, isStore; 
 
@@ -509,8 +509,8 @@ inline bool Propagate::is_valid_propagate(NodePropagate &currNode,
         }
         // case 2
         // load pointer: current node val is same with current record's addr
-//        else if(currNode.n.val == currRec.regular.src.addr &&
-//                    XT_Util::equal_mark(currNode.n.flag, flag::TCG_QEMU_LD) )
+        // else if(currNode.n.val == currRec.regular.src.addr &&
+        //     XT_Util::equal_mark(currNode.n.flag, flag::TCG_QEMU_LD) )
         // No need to equal Qemu Load
         else if(currNode.n.val == currRec.regular.src.addr && currNode.n.val.length() >= 7)
             isValidPropagate = true;

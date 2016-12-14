@@ -18,32 +18,23 @@ SearchAvalanche::SearchAvalanche(vector<Func_Call_Cont_Buf_t> v_funcCallContBuf,
 	m_logAesRec = logAesRec;
 }
 
-void SearchAvalanche::searchAvalanche()
+vector<AvalancheResBetweenInAndOut> SearchAvalanche::searchAvalanche()
 {
 	vector<FunctionCallBuffer> v_functionCallBuffer;
 	AvalancheResBetweenInAndOut avalResInOut;
+	vector<AvalancheResBetweenInAndOut> vAvalRes;
 
-	// for (auto s : m_vFuncCallContBuf){
-	// 	cout << "Call Mark: " << s.call_mark << endl;
-	// 	cout << "Ret Mark: " << s.ret_mark << endl;
-	// 	for(auto t : s.cont_buf){
-	// 		cout << "Begin Addr: " << t.begin_addr << endl;
-	// 		cout << "Size: " << t.size << endl;
-	// 	}
-	// }
+	BufferInOut bufInOut;
+	vector<BufferInOut> vBufInOut;	// Duplicate In Out buffers check
 
+	int numSearch;
 	v_functionCallBuffer = getFunctionCallBuffer(m_vFuncCallContBuf);
 
-	// cout << "Number of continuous buffer: " << v_functionCallBuffer.size() << endl;
-	// for(auto s : v_functionCallBuffer){
-	// 	cout << "Call Mark: " << s.callMark << endl;
-	// 	cout << "Sec Call Mark: " << s.callSecMark << endl;
-	// 	cout << "Ret Mark: " << s.retMark << endl;
-	// 	cout << "Sec Ret Mark: " << s.retSecMark << endl;
-	// 	cout << "Buffer Begin Addr: " << s.buffer.beginAddr << endl;
-	// 	cout << "Buffer Size: " << s.buffer.size << endl;
-	// }
+	// print all continue buffers
+	// printFuncCallContBuf(m_vFuncCallContBuf);
 
+	cout << "Begin to search avalanche between buffers:" << endl;
+	numSearch = 0;
 	vector<FunctionCallBuffer>::iterator in = v_functionCallBuffer.begin();
 	for(; in != v_functionCallBuffer.end(); ++in){
 		// if NOT kernel address and larger than 8 bytes
@@ -56,20 +47,33 @@ void SearchAvalanche::searchAvalanche()
 				   out->buffer.size >= BUFFER_LEN && 
 				   !isKernelAddress(out->buffer.beginAddr) && 
 				   in->buffer.beginAddr != out->buffer.beginAddr){
-					// cout << "In Buffer: " << endl; 
-					// cout << "Addr: " << hex << in->buffer.beginAddr << endl;
-					// cout << "Size: " << in->buffer.size / BIT_TO_BYTE << endl;
-					// cout << "Output Buffer: " << endl;
-					// cout << "Addr: " << hex << out->buffer.beginAddr << endl;
-					// cout << "Size: " << out->buffer.size / BIT_TO_BYTE << endl;
 
+				   	bufInOut = assignBufInOut(*in, *out);
+				   	if(!isDuplBufInOut(bufInOut, vBufInOut) ){
+				   		vBufInOut.push_back(bufInOut);
+
+				   		cout << numSearch << " times search avalanche..." << endl;
+						// Print in & out 
+						cout << "----------------------------------------" << endl;
+						cout << "Input buffer:" << endl;
+					   	printFunctionCallBuffer(*in);
+					   	cout << "Output buffer: " << endl;
+					   	printFunctionCallBuffer(*out);
+
+					   	avalResInOut = searchAvalancheBetweenInAndOut(*in, *out);
+					   	// printAvalResBetweenInAndOut(avalResInOut);
+					   	vAvalRes.push_back(avalResInOut);
+
+					   	numSearch++;
+				   	}
+	
 					// DEBUG
-					if(in->buffer.beginAddr == 0xbffff764 && 
-						out->buffer.beginAddr == 0xbffff744){
-						avalResInOut = searchAvalancheBetweenInAndOut(*in, *out);
-						printAvalResBetweenInAndOut(avalResInOut);
-						goto LABEL_OUTTER_LOOP;
-					}
+					// if(in->buffer.beginAddr == 0xbffff764 && 
+					// 	out->buffer.beginAddr == 0xbffff77c){
+					// 	avalResInOut = searchAvalancheBetweenInAndOut(*in, *out);
+					// 	printAvalResBetweenInAndOut(avalResInOut);
+					// 	goto LABEL_OUTTER_LOOP;
+					// }
 
 					// search avalanche effect between in and out continuous buffer
 					// searchAvalancheBetweenInAndOut(*in, *out);
@@ -78,7 +82,10 @@ void SearchAvalanche::searchAvalanche()
 		}
 	} // end outter for
 LABEL_OUTTER_LOOP:
+	cout << "Total numbfer of seaching: " << numSearch << endl;
 	cout << "search finish" << endl;
+
+	return vAvalRes;
 }
 
 void SearchAvalanche::searchAvalancheDebug()
@@ -98,6 +105,21 @@ void SearchAvalanche::searchAvalancheDebug()
 	}
 }
 
+// Given function call buffer in and out, assigns them to a struct <in, out>
+// for duplicate in and out buffer checking
+inline BufferInOut SearchAvalanche::assignBufInOut(FunctionCallBuffer &in, FunctionCallBuffer &out)
+{
+	BufferInOut bufInOut;
+
+	bufInOut.in.beginAddr = in.buffer.beginAddr;
+	bufInOut.in.size = in.buffer.size;
+
+	bufInOut.out.beginAddr = out.buffer.beginAddr;
+	bufInOut.out.size = out.buffer.size;
+
+	return bufInOut;
+}
+
 inline void SearchAvalanche::clearAvalacheResult(AvalancheRes &avalRes, 
 												 Buffer &avalIn, std::vector<Buffer> &vAvalOut)
 {
@@ -109,6 +131,22 @@ inline void SearchAvalanche::clearAvalacheResult(AvalancheRes &avalRes,
 	avalIn.size = 0;
 	
 	vAvalOut.clear();
+}
+
+inline bool SearchAvalanche::isDuplBufInOut(BufferInOut &bufInOut, vector<BufferInOut> &vBufInOut)
+{
+	if(vBufInOut.empty())
+		return false;
+
+	for(vector<BufferInOut>::iterator it = vBufInOut.begin(); it != vBufInOut.end(); ++it){
+		if(it->in.beginAddr == bufInOut.in.beginAddr && 
+		   it->in.size == bufInOut.in.size && 
+		   it->out.beginAddr == bufInOut.out.beginAddr &&
+		   it->out.size == bufInOut.out.size)
+			return true;
+	}
+
+	return false;
 }
 
 inline string SearchAvalanche::getInsnAddr(unsigned int &idx, vector<Rec> &vRec)
@@ -151,6 +189,15 @@ inline bool SearchAvalanche::isInRange(unsigned long &addr, Node &node)
 	if(addr >= node.i_addr && addr < node.i_addr + node.sz / BIT_TO_BYTE)
 		return true;
 	else return false;
+}
+
+inline bool SearchAvalanche::isSameBuffer(FunctionCallBuffer &a, FunctionCallBuffer &b)
+{
+	if(a.buffer.beginAddr == b.buffer.beginAddr &&
+		a.buffer.size == b.buffer.size)
+		return true;
+	else
+		return false;
 }
 
 inline bool SearchAvalanche::isSameFunctionCall(FunctionCallBuffer &a, FunctionCallBuffer &b)
@@ -624,9 +671,12 @@ void SearchAvalanche::printAvalResBetweenInAndOut(AvalancheResBetweenInAndOut &a
 	printFunctionCallBuffer(avalResInOut.in);
 	cout << "Search Avalache Output Buffer: " << endl;
 	printFunctionCallBuffer(avalResInOut.out);
-	for(auto s : avalResInOut.vAvalacheRes){
-		printAvalancheRes(s);
-	}
+	if(!avalResInOut.vAvalacheRes.empty() ){
+		for(auto s : avalResInOut.vAvalacheRes){
+			printAvalancheRes(s);
+		}
+	} else
+		cout << "no avalanche found between the input and output buffer" << endl;
 }
 
 void SearchAvalanche::printFunctionCallBuffer(FunctionCallBuffer &a)
@@ -649,6 +699,42 @@ void SearchAvalanche::printAvalancheRes(AvalancheRes &avalRes)
 	for(auto s : avalRes.vAvalOut)
 		printBuffer(s);
 
+}
+
+void SearchAvalanche::printFuncCallContBuf(std::vector<Func_Call_Cont_Buf_t> &vFuncCallContBuf)
+{
+	int funcCallIndex;
+	int contBufIndex;
+	int numTotalContBuf;
+
+	cout << "Number of funcation calls: " << vFuncCallContBuf.size() << endl;
+
+	funcCallIndex = 0;
+	numTotalContBuf = 0;
+	for (auto s : vFuncCallContBuf){
+		cout << "Function Call Index: " << funcCallIndex << endl;
+		cout << "Call Mark: " << s.call_mark << endl;
+		cout << "Sec Call Mark: " << s.sec_call_mark << endl;
+		cout << "Ret Mark: " << s.ret_mark << endl;
+		cout << "Sec Ret Mark: " << s.sec_ret_mark << endl;
+
+		cout << "continuous buffers in this function call: " << endl;
+		contBufIndex = 0;
+		for(auto t : s.cont_buf){
+			if(t.size / BIT_TO_BYTE > VALID_AVALANCHE_LEN && 
+			   !isKernelAddress(t.begin_addr)){
+				cout << "Begin Addr: " << hex << t.begin_addr << endl;
+				cout << "Size: " << dec << t.size / BIT_TO_BYTE << endl;
+				cout << "----------" << endl;
+				contBufIndex++;
+				numTotalContBuf++;
+			}
+		}
+		cout << "number of valid continuous buffers: " << contBufIndex << endl;
+		cout << "--------------------" << endl;
+		funcCallIndex++;
+	}
+	cout << "number of total continuout buffers: " << numTotalContBuf << endl;
 }
 
 void SearchAvalanche::printBuffer(Buffer &a)

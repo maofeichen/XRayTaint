@@ -13,8 +13,8 @@ class XT_Liveness
     static const unsigned long STACK_BEGIN_ADDR = 0xb0000000;
 
     static inline bool is_mem_alive(unsigned long &, unsigned long &);
-    static inline bool is_stack_mem_alive(unsigned long &, unsigned long &);
     static inline bool is_heap_mem_alive();
+    static inline bool is_stack_mem_alive(unsigned long &, unsigned long &);
 
     static vector<string> analyze_function_alive_buffer(vector<string> &); // IGNORE
     static vector<string> analyze_alive_buffer_per_function(vector<string> &);
@@ -27,8 +27,9 @@ class XT_Liveness
     static Func_Call_Cont_Buf_t analyze_continue_buffer_per_function(vector<string> &);
  public:
      XT_Liveness();
-
      static std::vector<std::string> analyze_alive_buffer(std::vector<std::string> &);
+     void forceAddTaintBuffer(std::vector<Func_Call_Cont_Buf_t> &vFCallContBuf, 
+                              unsigned long beginAddr, unsigned long size);
      static std::vector<Func_Call_Cont_Buf_t> merge_continue_buffer(std::vector<std::string> &);
      static std::vector<Func_Call_Cont_Buf_t> filter_continue_buffer(std::vector<Func_Call_Cont_Buf_t> &);
      
