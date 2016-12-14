@@ -28,7 +28,8 @@ void xt_flushFile(FILE *xt_log)
 		   *idx == XT_INSN_CALL_SEC || \
 		   *idx == XT_INSN_CALL_FF2 || \
 		   *idx == XT_INSN_CALL_FF2_SEC || \
-		   *idx == XT_INSN_RET){
+		   *idx == XT_INSN_RET || \
+		   *idx == XT_INSN_RET_SEC){
 			for(i = 0; i < 3; i++){
 				fprintf(xt_log, "%x\t", *(uint32_t*) idx);
 				idx += 4;

@@ -4252,6 +4252,7 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
     		printf("PC: 0x80483cb\n");
     	}
     }
+    tcg_target_long curr_eip;
 #endif /* CONFIG_TCG_XTAINT */
 
     s->pc = pc_start;
@@ -6380,12 +6381,14 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 #ifdef CONFIG_TCG_XTAINT
 		if(xt_enable_func_mark){
 			// record esp, top of stack (ret addr) before ret
+			// because instrument after pop, but we want to log esp
+			// before pop, thus the log value will be 4 bytes > expect
+			// handle in XT_write_mark()
 			XT_mark(XT_INSN_RET, cpu_regs[R_ESP], cpu_T[0]);
 
 			// record callee addr as well
-			// error when try to instrument this IR, disable temporarily
-			// XT_mark(XT_INSN_CALL_FF2_SEC, cpu_T[0], 0);
-//			XT_mark(XT_INSN_CALL_FF2_SEC, 0, 0);
+			curr_eip = cpu_single_env->eip;
+			XT_mark(XT_INSN_RET_SEC, curr_eip, 0);
 		}
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -6407,9 +6410,8 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
 			XT_mark(XT_INSN_RET, cpu_regs[R_ESP], cpu_T[0]);
 
 			// record callee addr as well
-			// error when try to instrument this IR, disable temporarily
-			// XT_mark(XT_INSN_CALL_FF2_SEC, cpu_T[0], 0);
-//			XT_mark(XT_INSN_CALL_FF2_SEC, 0, 0);
+			curr_eip = cpu_single_env->eip;
+			XT_mark(XT_INSN_RET_SEC, curr_eip, 0);
 		}
 #endif /* CONFIG_TCG_XTAINT */
 
