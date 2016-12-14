@@ -2016,11 +2016,12 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 					break;
 				case IR_NORMAL:
-					if(IREncode == TCG_LOAD_i32)
+					// if enable size mark, encode will be a range
+					if(IREncode >= TCG_LOAD_i32 && IREncode <= TCG_LOAD_i32 + 3)
 						XT_log_ld_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
-					else if(IREncode == TCG_STORE_i32)
+					else if(IREncode >= TCG_STORE_i32 && IREncode <= TCG_STORE_i32+3)
 						XT_log_st_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
-					else if(IREncode == TCG_STORE_POINTER_i32)
+					else if(IREncode >= TCG_STORE_POINTER_i32 && IREncode <= TCG_STORE_POINTER_i32 + 3)
 						XT_log_st_ptr_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 					else
 						XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
@@ -2062,11 +2063,12 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 					XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 					break;
 				case IR_NORMAL:
-					if(IREncode == TCG_LOAD_i32)
+					// similar
+					if(IREncode >= TCG_LOAD_i32 && IREncode <= TCG_LOAD_i32 + 3)
 						XT_log_ld_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
-					else if(IREncode == TCG_STORE_i32)
+					else if(IREncode >= TCG_STORE_i32 && IREncode <= TCG_STORE_i32+3)
 						XT_log_st_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
-					else if(IREncode == TCG_STORE_POINTER_i32)
+					else if(IREncode >= TCG_STORE_POINTER_i32 && IREncode <= TCG_STORE_POINTER_i32 + 3)
 						XT_log_st_ptr_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 					else
 						XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
@@ -2104,11 +2106,12 @@ static inline void tcg_out_XT_log_ir(TCGContext *s, const TCGArg *args)
 						XT_log_dst_tmp(s, args, ots, flag, ots_idx, &esp_offset);
 						break;
 					case IR_NORMAL:
-						if(IREncode == TCG_LOAD_i32)
+						// similar
+						if(IREncode >= TCG_LOAD_i32 && IREncode <= TCG_LOAD_i32 + 3)
 							XT_log_ld_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
-						else if(IREncode == TCG_STORE_i32)
+						else if(IREncode >= TCG_STORE_i32 && IREncode <= TCG_STORE_i32+3)
 							XT_log_st_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
-						else if(IREncode == TCG_STORE_POINTER_i32)
+						else if(IREncode >= TCG_STORE_POINTER_i32 && IREncode <= TCG_STORE_POINTER_i32 + 3)
 							XT_log_st_ptr_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
 						else
 							XT_log_src_dst_tmp(s, args, ts, ots, flag, ts_idx, ots_idx, &esp_offset);
