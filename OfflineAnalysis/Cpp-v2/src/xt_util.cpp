@@ -55,10 +55,10 @@ bool XT_Util::isMarkRecord(string &flag)
         XT_Util::equal_mark(flag, flag::XT_TCG_DEPOSIT) ||
         XT_Util::equal_mark(flag, flag::XT_CALL_INSN) || 
         XT_Util::equal_mark(flag, flag::XT_CALL_INSN_FF2) ||
-        XT_Util::equal_mark(flag, flag::XT_CALL_INSN_2nd) ||
-        XT_Util::equal_mark(flag, flag::XT_CALL_INSN_3nd) ||
+        XT_Util::equal_mark(flag, flag::XT_CALL_INSN_SEC) ||
+        XT_Util::equal_mark(flag, flag::XT_CALL_INSN_FF2_SEC) ||
         XT_Util::equal_mark(flag, flag::XT_RET_INSN) ||
-        XT_Util::equal_mark(flag, flag::XT_RET_INSN_2nd) )
+        XT_Util::equal_mark(flag, flag::XT_RET_INSN_SEC) )
         return true;
     else
         return false;

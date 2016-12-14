@@ -19,6 +19,7 @@ bool compare_res_node(const Node &a, const Node &b){
 
 void testCase5();
 void testCase(string logPath, bool isForceAdd);
+void testCaseDup(string logPath, bool isForceAdd);
 
 int main(int argc, char const *argv[])
 {
@@ -151,8 +152,10 @@ int main(int argc, char const *argv[])
     // testCase5();
 
     // analyze aes 128 1b cbc taint input with keystrokes
-    testCase(AES_128_CBC_1B_Taint_INPUT_KEYSTROKE, false);
+    // testCase(AES_128_CBC_1B_Taint_INPUT_KEYSTROKE, false);
 
+    // analyze aes 128 1b local compile taint input with memory
+    testCaseDup(AES_128_1B_LC_TAINT_INPUT, false);
     return 0;
 }
 
@@ -241,4 +244,50 @@ void testCase(string logPath, bool isForceAdd)
     SearchAvalanche sa(vFuncCallContBuf, xtLogRec);
     vAvalResult = sa.searchAvalanche();
     xtFile.writeAvalancheResult(XT_RESULT_PATH + logPath + AVAL_RES + XT_FILE_EXT, vAvalResult);
+}
+
+// Duplicate testCase() for latest test
+void testCaseDup(string logPath, bool isForceAdd)
+{
+    vector<string> xtLog;
+    vector<string> aliveBuf;
+    vector<Rec> xtLogRec;
+    vector<Func_Call_Cont_Buf_t> vFuncCallContBuf;
+    vector<AvalancheResBetweenInAndOut> vAvalResult;
+
+    XT_File xtFile =(XT_FILE_PATH + logPath + XT_FILE_EXT);
+    xtLog = xtFile.read();
+
+    // preprocess
+    XT_PreProcess xtPreProc;
+    // xtLog = xtPreProc.clean_size_mark(xtLog);
+    xtLog = xtPreProc.clean_empty_function_mark(xtLog);
+    xtLog = xtPreProc.clean_nonempty_function_mark(xtLog);
+    xtFile.write(XT_RESULT_PATH + logPath + XT_PREPROCESS + XT_FILE_EXT, xtLog);
+
+    // add memory size infomation
+    // xtLog = XT_PreProcess::add_mem_size_info(xtLog);
+    // xtFile.write(XT_RESULT_PATH + logPath + XT_ADD_SIZE_INFO + XT_FILE_EXT, xtLog);
+
+    // buffer liveness analysis
+    // aliveBuf = XT_Liveness::analyze_alive_buffer(xtLog);
+    // xtFile.write(XT_RESULT_PATH + logPath + XT_ALIVE_BUF + XT_FILE_EXT, aliveBuf);
+
+    // Merges continuous buffers
+
+    XT_Liveness xtLiveness;
+    // vFuncCallContBuf = XT_Liveness::merge_continue_buffer(aliveBuf);
+    // vFuncCallContBuf = XT_Liveness::filter_continue_buffer(vFuncCallContBuf);
+    // if(isForceAdd)
+        // xtLiveness.forceAddTaintBuffer(vFuncCallContBuf, TAINT_BUF_BEGIN_ADDR, TAINT_BUF_SIZE);
+    // xtFile.write_continue_buffer(XT_RESULT_PATH + logPath + CONT_BUF + XT_FILE_EXT, vFuncCallContBuf);
+
+    // Converts string format to Rec format
+    // xtLogRec = xtPreProc.convertToRec(xtLog);
+
+    // Searches avalanche effect
+
+    // SearchAvalanche sa(vFuncCallContBuf, xtLogRec);
+    // vAvalResult = sa.searchAvalanche();
+    // xtFile.writeAvalancheResult(XT_RESULT_PATH + logPath + AVAL_RES + XT_FILE_EXT, vAvalResult);
 }

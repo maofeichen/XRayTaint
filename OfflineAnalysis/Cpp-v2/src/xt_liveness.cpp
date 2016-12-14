@@ -26,7 +26,7 @@ vector<string> XT_Liveness::analyze_alive_buffer(vector<string> &v)
 
     for(vector<string>::iterator it = v.begin(); it != v.end(); ++it){
         // If a function call END mark hit
-        if(XT_Util::equal_mark(*it, flag::XT_RET_INSN_2nd) ){
+        if(XT_Util::equal_mark(*it, flag::XT_RET_INSN_SEC) ){
             ret = *(it - 1);    // ret is previous of 2nd ret mark
             idx = v.end() - it;
             // cout << "Index of ret mark to end is: " << idx << endl;
@@ -206,7 +206,7 @@ vector<Func_Call_Cont_Buf_t> XT_Liveness::merge_continue_buffer(vector<string> &
             it_call = it;
             for(it_ret = it_call + 1; it_ret != v.end(); ++it_ret){
                 // find call mark coresponding ret mark
-                if(XT_Util::equal_mark(*it_ret, flag::XT_RET_INSN_2nd)){
+                if(XT_Util::equal_mark(*it_ret, flag::XT_RET_INSN_SEC)){
                     vector<string> v_function_call(it_call, it_ret + 1);
                     func_call_cont_buf = XT_Liveness::analyze_continue_buffer_per_function(v_function_call);
                     v_func_call_cont_buf.push_back(func_call_cont_buf);

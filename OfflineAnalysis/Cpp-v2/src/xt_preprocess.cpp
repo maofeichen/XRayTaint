@@ -65,7 +65,7 @@ vector<string> XT_PreProcess::clean_empty_function_mark(vector<string> &v)
 
     for(vector<string>::iterator it = v.begin(); it != v.end(); ++it){
         // if a 2nd ret insn mark
-        if( (*it).substr(0,2).compare(flag::XT_RET_INSN_2nd) == 0){
+        if( (*it).substr(0,2).compare(flag::XT_RET_INSN_SEC) == 0){
             ret = v_new.back();
             sz = v_new.size();
             call = v_new.at(sz - 3);
@@ -96,7 +96,7 @@ inline bool XT_PreProcess::is_invalid_record(string &s)
         s.substr(0,2).compare(flag::XT_TCG_DEPOSIT) != 0 && \
         s.substr(0,2).compare(flag::XT_SIZE_BEGIN) != 0 && \
         s.substr(0,2).compare(flag::XT_SIZE_END) != 0 && \
-        s.substr(0,2).compare(flag::XT_CALL_INSN_2nd) != 0 && \
+        s.substr(0,2).compare(flag::XT_CALL_INSN_SEC) != 0 && \
         s.substr(0,2).compare(flag::XT_RET_INSN) != 0)
         return true;
     else
@@ -112,7 +112,7 @@ vector<string> XT_PreProcess::clean_nonempty_function_mark(vector<string> &v)
     
     for(std::vector<string>::iterator it = v.begin(); it != v.end(); ++it){
         // if a 2nd RET insn mark
-        if( (*it).substr(0,2).compare(flag::XT_RET_INSN_2nd) == 0){
+        if( (*it).substr(0,2).compare(flag::XT_RET_INSN_SEC) == 0){
             is_del_marks = false; // alway assume do not del the pair marks 
             is_invalid_rec = true; // always assume no valid records between 
             num_item = 1;

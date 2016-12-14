@@ -14,17 +14,17 @@ namespace flag
     const string XT_TCG_DEPOSIT     = "4a";
 
     const string XT_CALL_INSN       = "14";
-    const string XT_CALL_INSN_FF2   = "4e";
-    const string XT_CALL_INSN_2nd   = "4b";
-    const string XT_CALL_INSN_3nd   = "4d";
+    const string XT_CALL_INSN_SEC   = "15";
+    const string XT_CALL_INSN_FF2   = "1a";
+    const string XT_CALL_INSN_FF2_SEC   = "1b";
 
     const string XT_RET_INSN        = "18";
-    const string XT_RET_INSN_2nd    = "4c";
+    const string XT_RET_INSN_SEC    = "19";
 
-    const string TCG_QEMU_LD        = "34";
-    const string TCG_QEMU_ST        = "35";
+    const string TCG_QEMU_LD        = "52";
+    const string TCG_QEMU_ST        = "5a";
 
     const string TCG_ADD            = "3b";
-    const string TCG_XOR            = "40";
+    const string TCG_XOR            = "47";
 }
 #endif
