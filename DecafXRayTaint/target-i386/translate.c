@@ -4253,6 +4253,18 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
     		printf("PC: 0x80483cb\n");
     	}
     }
+
+    // if(xt_enable_insn_mark)
+    	// tcg_gen_debug_insn_start(pc_start);
+
+    // Enable instruction mark: log addr of each guest insn
+    if(xt_enable_insn_mark){
+    	uint32_t currPC = pc_start;
+    	// only for user space
+        if(currPC < 0xc0000000 && currPC > 0x1000000)
+        	XT_mark(XT_INSN_ADDR, currPC, 0);
+    }
+
     tcg_target_long curr_eip;
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -4274,15 +4286,6 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
     insn_len++;
     if (insn_len >= 15) goto illegal_op;
     cur_opcode = b = ldub_code(s->pc);
-
-#ifdef CONFIG_TCG_XTAINT
-    // Enable instruction mark: log addr of each guest insn
-    if(xt_enable_insn_mark)
-    	// only for user space
-        if(s->pc < 0xc0000000 && s->pc > 0x1000000)
-        	XT_mark(XT_INSN_ADDR, s->pc, 0);
-#endif /* CONFIG_TCG_XTAINT */
-
     s->pc++;
     /* check prefixes */
 #ifdef TARGET_X86_64
