@@ -41,6 +41,9 @@
 #define XT_SIZE_BEGIN 0x20
 #define XT_SIZE_END 0x24
 
+// Instruction mark
+#define XT_INSN_ADDR 0x32
+
 // Encode IR
 #define TCG_SHL 0x36
 #define TCG_SHR 0x37

@@ -42,6 +42,7 @@
 #include "shared/xtaint/xt_flag.h"
 #include "shared/xtaint/xt_func_mark.h"
 #include "shared/xtaint/xt_log_ir.h"
+#include "shared/xtaint/xt_insn_mark.h"
 #endif /* CONFIG_TCG_XTAINT */
 
 #define PREFIX_REPZ   0x01
@@ -4273,6 +4274,15 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
     insn_len++;
     if (insn_len >= 15) goto illegal_op;
     cur_opcode = b = ldub_code(s->pc);
+
+#ifdef CONFIG_TCG_XTAINT
+    // Enable instruction mark: log addr of each guest insn
+    if(xt_enable_insn_mark)
+    	// only for user space
+        if(s->pc < 0xc0000000 && s->pc > 0x1000000)
+        	XT_mark(XT_INSN_ADDR, s->pc, 0);
+#endif /* CONFIG_TCG_XTAINT */
+
     s->pc++;
     /* check prefixes */
 #ifdef TARGET_X86_64
