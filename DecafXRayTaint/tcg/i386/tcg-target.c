@@ -2202,7 +2202,16 @@ static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 			break;
 	}
 
+	// !!! Protect registers
+    tcg_out_push(s, TCG_REG_EAX);
+    tcg_out_push(s, TCG_REG_EBX);
+    tcg_out_push(s, TCG_REG_ECX);
+    tcg_out_push(s, TCG_REG_EDX);
 	tcg_out_calli(s, (tcg_target_long)XT_write_mark);
+    tcg_out_pop(s, TCG_REG_EDX);
+    tcg_out_pop(s, TCG_REG_ECX);
+    tcg_out_pop(s, TCG_REG_EBX);
+    tcg_out_pop(s, TCG_REG_EAX);
 
 	// restor stack
 	switch(args[0]){
@@ -2225,6 +2234,30 @@ static inline void tcg_out_XT_mark(TCGContext *s, const TCGArg *args)
 
 	tcg_out_pop(s, tcg_target_call_iarg_regs[0]);
 	esp_offset -= 4;
+}
+
+// Merge with tcg_out_XT_mark(), no longer needed
+// handle instruction mark
+static inline void tcg_out_XT_INSN_mark(TCGContext *s,
+										TCGArg *args,
+										uint32_t flag,
+										uint32_t pc)
+{
+	tcg_out_pushi(s, flag);
+	tcg_out_pushi(s, pc);
+	tcg_out_pushi(s, 0);
+
+    tcg_out_push(s, TCG_REG_EAX);
+    tcg_out_push(s, TCG_REG_EBX);
+    tcg_out_push(s, TCG_REG_ECX);
+    tcg_out_push(s, TCG_REG_EDX);
+	tcg_out_calli(s, (tcg_target_long)XT_write_insn_mark);
+    tcg_out_pop(s, TCG_REG_EDX);
+    tcg_out_pop(s, TCG_REG_ECX);
+    tcg_out_pop(s, TCG_REG_EBX);
+    tcg_out_pop(s, TCG_REG_EAX);
+
+	tcg_out_addi(s, TCG_REG_ESP, 0xc);
 }
 
 // push temporary: <flag, addr, val> to stack

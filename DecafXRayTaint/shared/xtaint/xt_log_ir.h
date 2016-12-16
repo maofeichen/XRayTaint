@@ -33,6 +33,8 @@ extern void XT_write_dst_tmp();
 extern void XT_write_src_dst_tmp();
 
 extern void XT_write_mark();
+// Debug write insn mark
+extern void XT_write_insn_mark();
 
 extern void XT_flush_one_rec_pool();
 extern void XT_flush_two_rec_pool();

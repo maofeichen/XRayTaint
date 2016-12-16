@@ -63,6 +63,10 @@
 #include "tainting/tcg_taint.h"
 #endif /* CONFIG_TCG_TAINT */
 
+#ifdef CONFIG_TCG_XTAINT
+#include "xtaint/xt_insn_mark.h"
+#endif /* CONFIG_TCG_XTAINT */
+
 #if defined(CONFIG_USE_GUEST_BASE) && !defined(TCG_TARGET_HAS_GUEST_BASE)
 #error GUEST_BASE not supported on this host.
 #endif
@@ -2147,6 +2151,17 @@ static inline int tcg_gen_code_common(TCGContext *s, uint8_t *gen_code_buf,
             break;
         case INDEX_op_debug_insn_start:
             /* debug instruction */
+#ifdef CONFIG_TCG_XTAINT
+        	// Implement in translate.c, not need here
+            // Enable instruction mark: log addr of each guest insn
+            if(xt_enable_insn_mark){
+            	// uint32_t currPC = args[0];
+            	// only for user space
+                // if(currPC < 0xc0000000 && currPC > 0x1000000)
+                	// tcg_out_XT_INSN_mark(s, args, XT_INSN_ADDR, currPC);
+            }
+#endif /* CONFIG_TCG_XTAINT */
+
             break;
         case INDEX_op_nop:
         case INDEX_op_nop1:
