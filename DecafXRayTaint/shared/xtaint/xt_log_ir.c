@@ -85,6 +85,7 @@ void XT_write_src_tmp()
 	uint32_t *src_flag = (uint32_t*)(ebp + offset + 8);
 
 	// if previous tmp flag is a dst flag, reset the tmp pool
+	// Indicating a new IR instrument
 	prev_flag = xt_curr_pos - 3;
 	if(xt_curr_pos != xt_pool &&
 	   XT_decode_TmpEncode(*prev_flag) >= IR_FIRST_DESTINATION){
@@ -94,6 +95,7 @@ void XT_write_src_tmp()
 		num_tmp = 0;
 	}
 
+	// debug
 	// *xt_curr_pos = XT_decode_IREncode(*src_flag);
 	*xt_curr_pos = *src_flag;
 	xt_curr_pos++;
@@ -117,6 +119,7 @@ void XT_write_dst_tmp()
 	uint32_t *dst_addr = (uint32_t*)(ebp + offset + 4);
 	uint32_t *dst_flag = (uint32_t*)(ebp + offset + 8);
 
+	// debug
 	// *xt_curr_pos = XT_decode_IREncode(*dst_flag);
 	*xt_curr_pos = *dst_flag;
 	xt_curr_pos++;
@@ -127,6 +130,7 @@ void XT_write_dst_tmp()
 
 	num_tmp++;
 
+	// debug
 	tmpEncode = XT_decode_TmpEncode(*dst_flag);
 	src_tmp_begin = XT_search_src_tmp(tmpEncode);
 	XT_flush_pair_rec(src_tmp_begin, dst_flag, dst_addr, dst_val);
@@ -415,7 +419,10 @@ uint32_t *XT_search_src_tmp(uint32_t dst_tmp_encode)
 	for(; sz < XT_BUF_POOL_SZ; sz++){
 		if(XT_cmp_tmp_encode(XT_decode_TmpEncode(*curr_field), dst_tmp_encode) )
 			return curr_field;
-		curr_field++;
+		// !!! It must be flag field all the time
+		// Otherwise addr or val field might be same as IR_SECOND_SROUCE,
+		// Result in an false positive
+		curr_field += 3;
 	}
 	fprintf(stderr, "error not found corresponding source temporary encode\n");
 	abort();
