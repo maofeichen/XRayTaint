@@ -9,7 +9,8 @@ DEFINES+=-I$(GLIB_CFLAGS)
 
 CC=gcc
 CPP=g++
-CFLAGS=-Wall -O2 -g -fPIC -MMD -Wno-unused-variable 
+CFLAGS=-Wall -O0 -g -fPIC -MMD -Wno-unused-variable 
+# CFLAGS=-Wall -O2 -g -fPIC -MMD -Wno-unused-variable 
  
 LDFLAGS=-g -shared 
 
