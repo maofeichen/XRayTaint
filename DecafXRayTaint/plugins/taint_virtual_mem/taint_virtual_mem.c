@@ -49,6 +49,8 @@ static uint8_t *taint_mem_bitmap = NULL;
 static XT_Taint_Mem xt_taint_mem = { .addr = 0, .taint_sz = 0, .pattern = 0 };
 static XT_Mem_Write xt_mw = { .mw_vaddr = 0, .mw_dt = 0 };
 
+static int total_taint_sz = 0;
+
 static uint32_t taint_addr = 0;
 static uint32_t taint_sz = 0;
 static uint8_t taint_pattern = 0;
@@ -96,7 +98,9 @@ void do_taint_memory(uint32_t addr, uint32_t sz, uint8_t pattern){
 	uint32_t begin_addr = 0;
 
 	if(addr > 0 && sz > 0){
-		// Only if any bits of taint range are not tainted
+		// Only if all bits of taint range are not tainted;
+	    // otherwise, any bit in the range is not tainted, re-taint
+	    // the whole range again
 		if( test_taint_range_bitmap(addr, sz) == false ){
 			uint8_t taint_source[sz];
 			memset(taint_source, pattern, sz);
@@ -107,7 +111,12 @@ void do_taint_memory(uint32_t addr, uint32_t sz, uint8_t pattern){
 				DECAF_printf("Successfully to taint guest OS memory!\n");
 				// set corresponding bitmap range
 				set_taint_range_bitmap(addr, sz);
+
+				total_taint_sz += sz;
+				DECAF_printf("Total tainted bytes: %d\n", total_taint_sz);
 			}
+		}else {
+		    DECAF_printf("Target tainting range had been tainted already...\n");
 		}
 	}else
 		DECAF_printf("error: target taint memory range is invalid\n");
@@ -149,8 +158,9 @@ static void load_mem_write_callback(DECAF_Callback_Params* param) {
 			DECAF_printf("computed range: addr: %x, size: %d bytes\n", xt_rtm.addr, xt_rtm.taint_sz);
 
 			if(xt_rtm.addr >= xt_mw.mw_vaddr &&
-				xt_rtm.addr + xt_rtm.taint_sz <= xt_mw.mw_vaddr + mw_byte_sz)
+				xt_rtm.addr + xt_rtm.taint_sz <= xt_mw.mw_vaddr + mw_byte_sz) {
 				do_taint_memory(xt_rtm.addr, xt_rtm.taint_sz, xt_rtm.pattern);
+			}
 		}
 
 		// Is whole target range tainted?
@@ -296,11 +306,11 @@ comp_taint_range(XT_Mem_Write *mw, XT_Taint_Mem *tm, XT_Taint_Mem *rtm)
  * determines if the corresponding range in bitmap has been
  * tainted (1) or not (0)
  *
- * If any bit in the range has been tainted, the whole range
+ * If all bits in the range has been tainted, the whole range
  * has been tainted.
  *
  * return:
- * 		false: any bit in the range has Not been tainted (all 0s)
+ * 		false: all bits in the range has Not been tainted (all 0s)
  * 		true: else
  */
 static bool test_taint_range_bitmap(uint32_t addr, uint32_t byte_sz)
@@ -319,11 +329,16 @@ static bool test_taint_range_bitmap(uint32_t addr, uint32_t byte_sz)
 
 	uint32_t begin_bit_idx = addr - xt_taint_mem.addr;
 	uint32_t byte_idx = 0;
+
+	// Only if all bits are true (tainted), return true;
+	// Otherwise, return false
 	for(; byte_idx < byte_sz; byte_idx++){
-		if(test_bitmap(taint_mem_bitmap, begin_bit_idx + byte_idx) ){
-			hasTaint = true;
-			break;
-		}
+	    hasTaint = test_bitmap(taint_mem_bitmap, begin_bit_idx + byte_idx);
+
+		// if(test_bitmap(taint_mem_bitmap, begin_bit_idx + byte_idx) ){
+		// 	hasTaint = true;
+		// 	break;
+		// }
 	}
 
 	return hasTaint;
@@ -393,6 +408,18 @@ static inline void set_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_idx)
 		DECAF_printf("error: set_bitmap: taint memory bitmap is empty\n");
 	else
 		taint_mem_bitmap[bit_idx / BYTE_TO_BIT] |= 1 << (bit_idx % BYTE_TO_BIT);
+}
+
+static inline void print_bitmap(uint8_t *taint_mem_bitmap, uint32_t byte_sz)
+{
+	if(taint_mem_bitmap){
+		DECAF_printf("taint memory bitmap: \n");
+		uint32_t byte_idx = 0;
+		for(; byte_idx < byte_sz; byte_idx++){
+			DECAF_printf("");
+		}
+	}else
+		DECAF_printf("error: print_bitmap, invalid taint memory bitmap\n");
 }
 
 static inline uint8_t get_mw_byte_size(DATA_TYPE dt)
