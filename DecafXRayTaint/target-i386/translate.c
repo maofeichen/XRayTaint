@@ -4261,8 +4261,11 @@ static target_ulong disas_insn(DisasContext *s, target_ulong pc_start)
     if(xt_enable_insn_mark){
     	uint32_t currPC = pc_start;
     	// only for user space
-        if(currPC < 0xc0000000 && currPC > 0x1000000)
-        	XT_mark(XT_INSN_ADDR, currPC, 0);
+        // if(currPC < 0xc0000000 && currPC > 0x1000000)
+        // 	XT_mark(XT_INSN_ADDR, currPC, 0);
+
+        // Mark every instruction
+        XT_mark(XT_INSN_ADDR, currPC, 0);
     }
 
     tcg_target_long curr_eip;
