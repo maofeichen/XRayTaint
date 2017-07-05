@@ -36,6 +36,11 @@ extern int taintcheck_chk_hdread(const ram_addr_t paddr,const unsigned long vadd
 extern int taintcheck_chk_hdwrite(const ram_addr_t paddr, const unsigned long vaddr, const int size, const int64_t sect_num, const void *s);
 #endif
 
+#ifdef CONFIG_TCG_XTAINT
+extern int enable_debug_ide;
+#endif
+
+
 #define BMDMA_PAGE_SIZE 4096
 
 static void bmdma_start_dma(IDEDMA *dma, IDEState *s,
@@ -135,18 +140,41 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
             if (is_write) {
                 pci_dma_write(&bm->pci_dev->dev, bm->cur_prd_addr,
                               s->io_buffer + s->io_buffer_index, l);
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "pci_dma_write: sec no: %d\n", ide_get_sector(s));
+    }
+#endif /* CONFIG_TCG_XTAINT */
 #ifdef CONFIG_TCG_TAINT
 //fprintf(stderr, "pci_dma_write()\n");
                 if(ide_get_sector(s) >= 0)
-                  taintcheck_chk_hdread(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
+                  taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
 #endif /* CONFIG_TCG_TAINT */
+
+//#ifdef CONFIG_TCG_TAINT
+////fprintf(stderr, "pci_dma_write()\n");
+//                if(ide_get_sector(s) >= 0)
+//                  taintcheck_chk_hdread(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
+//#endif /* CONFIG_TCG_TAINT */
+
             } else {
                 pci_dma_read(&bm->pci_dev->dev, bm->cur_prd_addr,
                              s->io_buffer + s->io_buffer_index, l);
+ #ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "pci_dma_read: sec no: %d\n",ide_get_sector(s) );
+    }
+#endif /* CONFIG_TCG_XTAINT */
+//#ifdef CONFIG_TCG_TAINT
+////fprintf(stderr, "pci_dma_read()\n");
+//                if(ide_get_sector(s) >= 0)
+//                  taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
+//#endif /* CONFIG_TCG_TAINT */
+
 #ifdef CONFIG_TCG_TAINT
 //fprintf(stderr, "pci_dma_read()\n");
                 if(ide_get_sector(s) >= 0)
-                  taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
+                  taintcheck_chk_hdread(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
 #endif /* CONFIG_TCG_TAINT */
             }
             bm->cur_prd_addr += l;

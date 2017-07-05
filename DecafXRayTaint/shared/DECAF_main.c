@@ -48,6 +48,7 @@
 #include "xtaint/xt_size_mark.h"
 #include "xtaint/xt_func_mark.h"
 #include "xtaint/xt_insn_mark.h"
+#include "xtaint/xt_debug.h"
 #endif /* CONFIG_TCG_XTAINT */
 
 #ifdef CONFIG_VMI_ENABLE

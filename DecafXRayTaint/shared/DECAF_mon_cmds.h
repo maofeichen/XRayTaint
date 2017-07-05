@@ -160,6 +160,14 @@ http://code.google.com/p/decaf-platform/
         .help       = "Turn on/off xray taint instruction mark",
         .mhandler.cmd_new = xt_do_insn_mark,
 },
+{
+        .name       = "xraytaint_dbg_ide",
+        .args_type  = "load:b",
+        .params     = "on|off",
+        .help       = "Turn on/off xray taint debug ide",
+        .mhandler.cmd_new = do_debug_ide,
+},
+
 #endif /* #ifdef CONFIG_TCG_XTAINT */
 #endif /* CONFIG_TCG_TAINT */
 

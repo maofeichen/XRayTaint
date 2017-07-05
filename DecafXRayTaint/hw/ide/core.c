@@ -41,6 +41,10 @@ extern int taintcheck_chk_hdin(int size, int64_t sect_num, uint32_t offset, void
 extern int taintcheck_chk_hdout(int size, int64_t sect_num, uint32_t offset, void *s);
 #endif /* CONFIG_TCG_TAINT */
 
+#ifdef CONFIG_TCG_XTAINT
+extern int enable_debug_ide;
+#endif
+
 /* These values were based on a Seagate ST3500418AS but have been modified
    to make more sense in QEMU */
 static const int smart_attributes[][12] = {
@@ -1666,6 +1670,12 @@ void ide_data_writew(void *opaque, uint32_t addr, uint32_t val)
 #ifdef CONFIG_TCG_TAINT
     taintcheck_chk_hdout(2, ide_get_sector(s), s->data_ptr-s->io_buffer, s->bs);
 #endif /* CONFIG_TCG_TAINT */
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "ide_data_writew: sec no: %d, offset: %d, val: %02x\n",
+          ide_get_sector(s), s->data_ptr-s->io_buffer, val);
+    }
+#endif
     p = s->data_ptr;
     *(uint16_t *)p = le16_to_cpu(val);
     p += 2;
@@ -1691,6 +1701,14 @@ uint32_t ide_data_readw(void *opaque, uint32_t addr)
 #endif /* CONFIG_TCG_TAINT */
     p = s->data_ptr;
     ret = cpu_to_le16(*(uint16_t *)p);
+
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "ide_data_readw: sec no: %d, offset: %d, val: %02x\n",
+          ide_get_sector(s), s->data_ptr-s->io_buffer, ret);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     p += 2;
     s->data_ptr = p;
     if (p >= s->data_end)
@@ -1712,6 +1730,12 @@ void ide_data_writel(void *opaque, uint32_t addr, uint32_t val)
 #ifdef CONFIG_TCG_TAINT
     taintcheck_chk_hdout(4, ide_get_sector(s), s->data_ptr-s->io_buffer, s->bs);
 #endif /* CONFIG_TCG_TAINT */
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "ide_data_writel: sec no: %d, offset: %d, val: %02x\n",
+          ide_get_sector(s), s->data_ptr-s->io_buffer, val);
+    }
+#endif /* CONFIG_TCG_XTAINT */
     p = s->data_ptr;
     *(uint32_t *)p = le32_to_cpu(val);
     p += 4;
@@ -1737,6 +1761,14 @@ uint32_t ide_data_readl(void *opaque, uint32_t addr)
 #endif /* CONFIG_TCG_TAINT */
     p = s->data_ptr;
     ret = cpu_to_le32(*(uint32_t *)p);
+
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "ide_data_readl: sec no: %d, offset: %d, val: %02x\n",
+          ide_get_sector(s), s->data_ptr-s->io_buffer, ret);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     p += 4;
     s->data_ptr = p;
     if (p >= s->data_end)
