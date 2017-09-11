@@ -36,7 +36,7 @@ extern int taintcheck_chk_hdread(const ram_addr_t paddr,const unsigned long vadd
 extern int taintcheck_chk_hdwrite(const ram_addr_t paddr, const unsigned long vaddr, const int size, const int64_t sect_num, const void *s);
 #endif
 
-#ifdef CONFIG_TCG_XTAINT
+#ifdef CONFIG_TCG_XTAINT // mchen
 extern int enable_debug_ide;
 #endif
 
@@ -71,6 +71,13 @@ static int bmdma_prepare_buf(IDEDMA *dma, int is_write)
         uint32_t size;
     } prd;
     int l, len;
+
+#ifdef CONFIG_TCG_XTAINT
+        if(enable_debug_ide) {
+          int64 sec_num = ide_get_sector(s);
+          fprintf(stderr, "enter pci.c: bmdma_prepare_buf() - IDEDMA: %p - sec no: %d\n", dma, sec_num);
+        }
+#endif /* CONFIG_TCG_XTAINT */
 
     pci_dma_sglist_init(&s->sg, &bm->pci_dev->dev,
                         s->nsector / (BMDMA_PAGE_SIZE / 512) + 1);
@@ -114,6 +121,12 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
     } prd;
     int l, len;
 
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter bmdam_rw_buf() (-> pci_dma_write() or -> pci_dma_read() ) - IDEDMA: %p - is write?: %d\n", dma, is_write);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     for(;;) {
         l = s->io_buffer_size - s->io_buffer_index;
         if (l <= 0)
@@ -142,40 +155,42 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
                               s->io_buffer + s->io_buffer_index, l);
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "pci_dma_write: sec no: %d\n", ide_get_sector(s));
+      fprintf(stderr, "pci_dma_write() (-> taintcheck_chk_hdread() ): sec no: %d\n", ide_get_sector(s));
     }
 #endif /* CONFIG_TCG_XTAINT */
-#ifdef CONFIG_TCG_TAINT
-//fprintf(stderr, "pci_dma_write()\n");
-                if(ide_get_sector(s) >= 0)
-                  taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
-#endif /* CONFIG_TCG_TAINT */
 
 //#ifdef CONFIG_TCG_TAINT
 ////fprintf(stderr, "pci_dma_write()\n");
-//                if(ide_get_sector(s) >= 0)
-//                  taintcheck_chk_hdread(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
-//#endif /* CONFIG_TCG_TAINT */
-
-            } else {
-                pci_dma_read(&bm->pci_dev->dev, bm->cur_prd_addr,
-                             s->io_buffer + s->io_buffer_index, l);
- #ifdef CONFIG_TCG_XTAINT
-    if(enable_debug_ide) {
-      fprintf(stderr, "pci_dma_read: sec no: %d\n",ide_get_sector(s) );
-    }
-#endif /* CONFIG_TCG_XTAINT */
-//#ifdef CONFIG_TCG_TAINT
-////fprintf(stderr, "pci_dma_read()\n");
 //                if(ide_get_sector(s) >= 0)
 //                  taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
 //#endif /* CONFIG_TCG_TAINT */
 
 #ifdef CONFIG_TCG_TAINT
-//fprintf(stderr, "pci_dma_read()\n");
+//fprintf(stderr, "pci_dma_write()\n");
                 if(ide_get_sector(s) >= 0)
                   taintcheck_chk_hdread(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
 #endif /* CONFIG_TCG_TAINT */
+
+            } else {
+                pci_dma_read(&bm->pci_dev->dev, bm->cur_prd_addr,
+                             s->io_buffer + s->io_buffer_index, l);
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "pci_dma_read() (-> taintcheck_chk_hdwrite() ): sec no: %d\n",ide_get_sector(s) );
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
+#ifdef CONFIG_TCG_TAINT
+//fprintf(stderr, "pci_dma_read()\n");
+                if(ide_get_sector(s) >= 0)
+                  taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
+#endif /* CONFIG_TCG_TAINT */
+
+//#ifdef CONFIG_TCG_TAINT
+////fprintf(stderr, "pci_dma_read()\n");
+//                if(ide_get_sector(s) >= 0)
+//                  taintcheck_chk_hdread(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
+//#endif /* CONFIG_TCG_TAINT */
             }
             bm->cur_prd_addr += l;
             bm->cur_prd_len -= l;

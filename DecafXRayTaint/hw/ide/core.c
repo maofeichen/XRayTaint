@@ -469,7 +469,12 @@ static void ide_rw_error(IDEState *s) {
 
 void ide_sector_read(IDEState *s)
 {
-    int64_t sector_num;
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter ide_sector_read() -> sec no: %d\n", ide_get_sector(s) );
+    }
+#endif /* CONFIG_TCG_XTAINT */
+  int64_t sector_num;
     int ret, n;
 
     s->status = READY_STAT | SEEK_STAT;
@@ -483,6 +488,7 @@ void ide_sector_read(IDEState *s)
 #if defined(DEBUG_IDE)
         printf("read sector=%" PRId64 "\n", sector_num);
 #endif
+
         if (n > s->req_nb_sectors)
             n = s->req_nb_sectors;
 
@@ -663,6 +669,12 @@ static void ide_sector_write_timer_cb(void *opaque)
 
 void ide_sector_write(IDEState *s)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "ide_sector_write() -> sec no: %d\n", ide_get_sector(s) );
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     int64_t sector_num;
     int ret, n, n1;
 
@@ -671,6 +683,7 @@ void ide_sector_write(IDEState *s)
 #if defined(DEBUG_IDE)
     printf("write sector=%" PRId64 "\n", sector_num);
 #endif
+
     n = s->nsector;
     if (n > s->req_nb_sectors)
         n = s->req_nb_sectors;
@@ -1006,6 +1019,12 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
     int n;
     int lba48 = 0;
 
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter ide_exec_cmd() - IDEBUS: %p - val: %d\n", bus, val );
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
 #if defined(DEBUG_IDE)
     printf("ide: CMD=%02x\n", val);
 #endif
@@ -1085,6 +1104,12 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
 	lba48 = 1;
     case WIN_READ:
     case WIN_READ_ONCE:
+#ifdef CONFIG_TCG_XTAINT
+        if(enable_debug_ide) {
+          int64 sec_num = ide_get_sector(s);
+          fprintf(stderr, "core.c: WIN_READ_X - sec no: %d\n", sec_num);
+        }
+#endif /* CONFIG_TCG_XTAINT */
         if (s->drive_kind == IDE_CD) {
             ide_set_signature(s); /* odd, but ATA4 8.27.5.2 requires it */
             goto abort_cmd;
@@ -1135,6 +1160,12 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
 	lba48 = 1;
     case WIN_READDMA:
     case WIN_READDMA_ONCE:
+#ifdef CONFIG_TCG_XTAINT
+        if(enable_debug_ide) {
+          int64 sec_num = ide_get_sector(s);
+          fprintf(stderr, "ide_exec_cmd(): WIN_READDMA_X - sec no: %d\n", sec_num);
+        }
+#endif /* CONFIG_TCG_XTAINT */
         if (!s->bs)
             goto abort_cmd;
 	ide_cmd_lba48_transform(s, lba48);
@@ -1146,6 +1177,12 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
     case WIN_WRITEDMA_ONCE:
         if (!s->bs)
             goto abort_cmd;
+#ifdef CONFIG_TCG_XTAINT
+        if(enable_debug_ide) {
+          int64 sec_num = ide_get_sector(s);
+          fprintf(stderr, "ide_exec_cmd(): WIN_WRITEDMA_X - sec no: %d\n", sec_num);
+        }
+#endif /* CONFIG_TCG_XTAINT */
 	ide_cmd_lba48_transform(s, lba48);
         ide_sector_start_dma(s, IDE_DMA_WRITE);
         s->media_changed = 1;
@@ -1662,6 +1699,13 @@ void ide_data_writew(void *opaque, uint32_t addr, uint32_t val)
     IDEState *s = idebus_active_if(bus);
     uint8_t *p;
 
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter ide_data_writew() (-> taintcheck_chk_hdout() ): sec no: %d, offset: %d, val: %02x\n",
+          ide_get_sector(s), s->data_ptr-s->io_buffer, val);
+    }
+#endif
+
     /* PIO data access allowed only when DRQ bit is set. The result of a write
      * during PIO out is indeterminate, just ignore it. */
     if (!(s->status & DRQ_STAT) || ide_is_pio_out(s)) {
@@ -1670,12 +1714,7 @@ void ide_data_writew(void *opaque, uint32_t addr, uint32_t val)
 #ifdef CONFIG_TCG_TAINT
     taintcheck_chk_hdout(2, ide_get_sector(s), s->data_ptr-s->io_buffer, s->bs);
 #endif /* CONFIG_TCG_TAINT */
-#ifdef CONFIG_TCG_XTAINT
-    if(enable_debug_ide) {
-      fprintf(stderr, "ide_data_writew: sec no: %d, offset: %d, val: %02x\n",
-          ide_get_sector(s), s->data_ptr-s->io_buffer, val);
-    }
-#endif
+
     p = s->data_ptr;
     *(uint16_t *)p = le16_to_cpu(val);
     p += 2;
@@ -1691,6 +1730,14 @@ uint32_t ide_data_readw(void *opaque, uint32_t addr)
     uint8_t *p;
     int ret;
 
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter ide_data_readw() (-> taintcheck_chk_hdin() ): sec no: %d, offset: %d, val: %02x\n",
+          ide_get_sector(s), s->data_ptr-s->io_buffer, ret);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
+
     /* PIO data access allowed only when DRQ bit is set. The result of a read
      * during PIO in is indeterminate, return 0 and don't move forward. */
     if (!(s->status & DRQ_STAT) || !ide_is_pio_out(s)) {
@@ -1702,12 +1749,6 @@ uint32_t ide_data_readw(void *opaque, uint32_t addr)
     p = s->data_ptr;
     ret = cpu_to_le16(*(uint16_t *)p);
 
-#ifdef CONFIG_TCG_XTAINT
-    if(enable_debug_ide) {
-      fprintf(stderr, "ide_data_readw: sec no: %d, offset: %d, val: %02x\n",
-          ide_get_sector(s), s->data_ptr-s->io_buffer, ret);
-    }
-#endif /* CONFIG_TCG_XTAINT */
 
     p += 2;
     s->data_ptr = p;
@@ -1722,6 +1763,14 @@ void ide_data_writel(void *opaque, uint32_t addr, uint32_t val)
     IDEState *s = idebus_active_if(bus);
     uint8_t *p;
 
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter ide_data_writel() (-> taintcheck_chk_hdout() ): sec no: %d, offset: %d, val: %02x\n",
+          ide_get_sector(s), s->data_ptr-s->io_buffer, val);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
+
     /* PIO data access allowed only when DRQ bit is set. The result of a write
      * during PIO out is indeterminate, just ignore it. */
     if (!(s->status & DRQ_STAT) || ide_is_pio_out(s)) {
@@ -1730,12 +1779,6 @@ void ide_data_writel(void *opaque, uint32_t addr, uint32_t val)
 #ifdef CONFIG_TCG_TAINT
     taintcheck_chk_hdout(4, ide_get_sector(s), s->data_ptr-s->io_buffer, s->bs);
 #endif /* CONFIG_TCG_TAINT */
-#ifdef CONFIG_TCG_XTAINT
-    if(enable_debug_ide) {
-      fprintf(stderr, "ide_data_writel: sec no: %d, offset: %d, val: %02x\n",
-          ide_get_sector(s), s->data_ptr-s->io_buffer, val);
-    }
-#endif /* CONFIG_TCG_XTAINT */
     p = s->data_ptr;
     *(uint32_t *)p = le32_to_cpu(val);
     p += 4;

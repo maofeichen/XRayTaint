@@ -26,6 +26,10 @@
 #include "hw/ide/internal.h"
 #include "hw/scsi.h"
 
+#ifdef CONFIG_TCG_XTAINT
+extern int enable_debug_ide;
+#endif
+
 static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret);
 
 static void padstr8(uint8_t *buf, int buf_size, const char *src)
@@ -295,6 +299,14 @@ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret)
     IDEState *s = opaque;
     int data_offset, n;
 
+ #ifdef CONFIG_TCG_XTAINT
+        if(enable_debug_ide) {
+          int64 sec_num = ide_get_sector(s);
+          fprintf(stderr, "enter: atapi.c - ide_atapi_cmd_read_dma_cb - sec no: %d\n", sec_num);
+        }
+#endif /* CONFIG_TCG_XTAINT */
+
+
     if (ret < 0) {
         ide_atapi_io_error(s, ret);
         goto eot;
@@ -352,6 +364,7 @@ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret)
     s->bus->dma->aiocb = bdrv_aio_readv(s->bs, (int64_t)s->lba << 2,
                                        &s->bus->dma->qiov, n * 4,
                                        ide_atapi_cmd_read_dma_cb, s);
+
     if (!s->bus->dma->aiocb) {
         /* Note: media not present is the most likely case */
         ide_atapi_cmd_error(s, NOT_READY,
