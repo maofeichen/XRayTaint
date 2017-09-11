@@ -9,55 +9,141 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 //basic stub for plugins
-static plugin_interface_t taint_mem_interface;
-static DECAF_Handle mem_read_handle 	= DECAF_NULL_HANDLE;
-static DECAF_Handle mem_write_handle 	= DECAF_NULL_HANDLE;
+//static plugin_interface_t taint_mem_interface;
+static plugin_interface_t taint_disk_interface;
+//static DECAF_Handle mem_read_handle 	= DECAF_NULL_HANDLE;
+//static DECAF_Handle mem_write_handle 	= DECAF_NULL_HANDLE;
 
-typedef struct _XT_Taint_Mem{
-	uint32_t addr;
-	uint32_t taint_sz;
-	uint8_t pattern;
-} XT_Taint_Mem;
+//typedef struct _XT_Taint_Disk{
+//	uint64_t sec_no;
+//	uint32_t sec_sz;
+//	uint8_t pattern;
+//} XT_Taint_Disk;
 
-typedef struct _XT_Mem_Write{
-	gva_t mw_vaddr;
-	DATA_TYPE mw_dt;
-} XT_Mem_Write;
+//static XT_Taint_Disk xt_taint_disk = { .sec_no= 0, .sec_sz = 0, .pattern = 0 };
+
+//typedef struct _XT_Mem_Write{
+//	gva_t mw_vaddr;
+//	DATA_TYPE mw_dt;
+//} XT_Mem_Write;
 
 plugin_interface_t* init_plugin(void);
-static int taint_mem_init(void);
-static void load_mem_read_callback(DECAF_Callback_Params* param);
-static void load_mem_write_callback(DECAF_Callback_Params* param);
-static bool comp_taint_range(XT_Mem_Write *mw, XT_Taint_Mem *tm, XT_Taint_Mem *rtm);
-static void set_taint_range_bitmap(uint32_t addr, uint32_t byte_sz);
-static bool test_taint_range_bitmap(uint32_t addr, uint32_t byte_sz);
-static bool is_range_taint(uint32_t addr, uint32_t byte_sz);
-static inline uint8_t get_mw_byte_size(DATA_TYPE dt);
 
-static inline void set_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_idx);
-static inline int test_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_index);
+static int taint_disk_init(void);
+static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint8_t pattern);
+//static int taint_mem_init(void);
+//static void load_mem_read_callback(DECAF_Callback_Params* param);
+//static void load_mem_write_callback(DECAF_Callback_Params* param);
+//static bool comp_taint_range(XT_Mem_Write *mw, XT_Taint_Mem *tm, XT_Taint_Mem *rtm);
+//static void set_taint_range_bitmap(uint32_t addr, uint32_t byte_sz);
+//static bool test_taint_range_bitmap(uint32_t addr, uint32_t byte_sz);
+//static bool is_range_taint(uint32_t addr, uint32_t byte_sz);
+//static inline uint8_t get_mw_byte_size(DATA_TYPE dt);
 
-static const int ADDR_OFFSET = 1;
-static const int BYTE_TO_BIT = 8;
+//static inline void set_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_idx);
+//static inline int test_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_index);
 
-static int is_taint = 0;
+//static const int ADDR_OFFSET = 1;
+//static const int BYTE_TO_BIT = 8;
 
-static uint8_t *taint_mem_bitmap = NULL;
+//static int is_taint = 0;
 
-static XT_Taint_Mem xt_taint_mem = { .addr = 0, .taint_sz = 0, .pattern = 0 };
-static XT_Mem_Write xt_mw = { .mw_vaddr = 0, .mw_dt = 0 };
+//static uint8_t *taint_mem_bitmap = NULL;
 
-static int total_taint_sz = 0;
+//static XT_Taint_Mem xt_taint_mem = { .addr = 0, .taint_sz = 0, .pattern = 0 };
+//static XT_Mem_Write xt_mw = { .mw_vaddr = 0, .mw_dt = 0 };
 
-static uint32_t taint_addr = 0;
-static uint32_t taint_sz = 0;
-static uint8_t taint_pattern = 0;
+//static int total_taint_sz = 0;
+
+//static uint32_t taint_addr = 0;
+//static uint32_t taint_sz = 0;
+//static uint8_t taint_pattern = 0;
 // static uint32_t offset = 12;
-static uint32_t offset = 44;
+//static uint32_t offset = 44;
 // static uint32_t offset = 0;
 
+void do_pass_taint_disk(Monitor *mon, const QDict *qdict)
+{
+    uint32_t sec_no   = 0;
+    uint32_t sec_size = 0;
+    uint8_t  pattern  = 0;
+
+    if(qdict != NULL){
+        sec_no    = qdict_get_int(qdict, "sec_no");
+        sec_size  = qdict_get_int(qdict, "sec_sz");
+        pattern   = qdict_get_int(qdict, "taint_pattern");
+        DECAF_printf("Taint disk - sec no: %d - sec size: %d - taint_pattern: %x\n", sec_no, sec_size, pattern);
+
+//        xt_taint_disk.sec_no  = sec_no;
+//        xt_taint_disk.sec_sz  = sec_size;
+//        xt_taint_disk.pattern = pattern;
+
+        if(sec_no && sec_size && pattern) {
+          do_taint_disk(sec_no, sec_size, pattern);
+        }
+    }
+}
+
+/*
+ * Commands supported by the plugin. Included in plugin_cmds.h
+ */
+static mon_cmd_t taint_disk_cmds[] = {
+		{
+		    .name       = "pass_taint_disk_args",
+		    .args_type  = "sec_no:i,sec_sz:i,taint_pattern:i",
+		    .mhandler.cmd   = do_pass_taint_disk,
+		    .params     = "sec_no sec_sz taint_pattern",
+		    .help       = "pass the sector no, sector size and pattern for tainting disk"
+		},
+};
+
+
+/*
+ * Register a memory operation (read or write) callback
+ */
+static int taint_disk_init(void) {
+    DECAF_printf("Taint disk plugin starts...\n");
+
+    return (0);
+}
+
+/*
+ * This function is invoked when the plugin is unloaded.
+ */
+static void taint_disk_cleanup(void) {
+    DECAF_printf("Bye world\n");
+}
+
+
+static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint8_t pattern)
+{
+    DECAF_printf("enter do_taint_disk() - sec no: %d - sec size: %d - taint_pattern: %x\n", sec_no, sec_sz, pattern);
+}
+
+/*
+ * This function registers the plugin_interface with DECAF.
+ * The interface is used to register custom commands, let DECAF know which
+ * cleanup function to call upon plugin unload, etc,.
+ */
+plugin_interface_t* init_plugin(void) {
+//    taint_mem_interface.mon_cmds = taint_mem_cmds;
+//    taint_mem_interface.plugin_cleanup = &taint_mem_cleanup;
+
+//    taint_mem_init();
+//    return (&taint_mem_interface);
+
+    taint_disk_interface.mon_cmds       = taint_disk_cmds;
+    taint_disk_interface.plugin_cleanup = &taint_disk_cleanup;
+    taint_disk_init();
+
+    return (&taint_disk_interface);
+}
+
+
+/*
 void do_pass_taint_arg(Monitor *mon, const QDict *qdict)
 {
     uint32_t mem_addr = 0;
@@ -93,7 +179,9 @@ void do_pass_taint_arg(Monitor *mon, const QDict *qdict)
         }
     }
 }
+*/
 
+/*
 void do_taint_memory(uint32_t addr, uint32_t sz, uint8_t pattern){
 	uint32_t begin_addr = 0;
 
@@ -134,16 +222,20 @@ void do_taint_memory(uint32_t addr, uint32_t sz, uint8_t pattern){
 //		}
 //	}
 }
+*/
 
+/*
 static void load_mem_read_callback(DECAF_Callback_Params* param) {
     if(param->mr.vaddr == taint_addr && taint_addr != 0){
         do_taint_memory(taint_addr, taint_sz, taint_pattern);
     }
 }
+*/
 
 /**
  * Handle when Decaf memory write callback is active
  */
+/*
 static void load_mem_write_callback(DECAF_Callback_Params* param) {
 	if(is_taint){
 		XT_Taint_Mem xt_rtm = { .addr = 0, .taint_sz = 0, .pattern = 0 };
@@ -176,10 +268,12 @@ static void load_mem_write_callback(DECAF_Callback_Params* param) {
     //     do_taint_memory(taint_addr, taint_sz, taint_pattern);
     // }
 }
+*/
 
 /*
  * Register a memory operation (read or write) callback
  */
+/*
 static int taint_mem_init(void) {
     DECAF_printf("Taint memory plugin starts...\n");
 
@@ -193,15 +287,16 @@ static int taint_mem_init(void) {
     }
     return (0);
 }
+*/
+
 
 /*
  * This function is invoked when the plugin is unloaded.
  */
+/*
 static void taint_mem_cleanup(void) {
     DECAF_printf("Bye world\n");
-    /*
-     * Unregister for the taint memory callback and exit
-     */
+    // Unregister for the taint memory callback and exit
     if(mem_write_handle != DECAF_NULL_HANDLE) {
         // DECAF_unregister_callback(DECAF_MEM_READ_CB, mem_opera_handle);
     	DECAF_unregister_callback(DECAF_MEM_WRITE_CB, mem_write_handle);
@@ -213,10 +308,14 @@ static void taint_mem_cleanup(void) {
         }
     }
 }
+*/
+
+
 
 /*
  * Commands supported by the plugin. Included in plugin_cmds.h
  */
+/*
 static mon_cmd_t taint_mem_cmds[] = {
 		{
 		    .name       = "pass_taint_args",
@@ -227,24 +326,14 @@ static mon_cmd_t taint_mem_cmds[] = {
 		},
 		{ NULL, NULL, },
 };
+*/
 
-/*
- * This function registers the plugin_interface with DECAF.
- * The interface is used to register custom commands, let DECAF know which
- * cleanup function to call upon plugin unload, etc,.
- */
-plugin_interface_t* init_plugin(void) {
-    taint_mem_interface.mon_cmds = taint_mem_cmds;
-    taint_mem_interface.plugin_cleanup = &taint_mem_cleanup;
-
-    taint_mem_init();
-    return (&taint_mem_interface);
-}
 
 /*
  * Given the memory write range and the target taint range,
  * computes the real taint range that intersects of two
  */
+/*
 static bool
 comp_taint_range(XT_Mem_Write *mw, XT_Taint_Mem *tm, XT_Taint_Mem *rtm)
 {
@@ -299,6 +388,7 @@ comp_taint_range(XT_Mem_Write *mw, XT_Taint_Mem *tm, XT_Taint_Mem *rtm)
 
 	return hasIntersect;
 }
+*/
 
 /*
  * Given the target taint range: <begin address, size>,
@@ -312,6 +402,7 @@ comp_taint_range(XT_Mem_Write *mw, XT_Taint_Mem *tm, XT_Taint_Mem *rtm)
  * 		false: all bits in the range has Not been tainted (all 0s)
  * 		true: else
  */
+/*
 static bool test_taint_range_bitmap(uint32_t addr, uint32_t byte_sz)
 {
 	bool hasTaint = false;
@@ -342,7 +433,9 @@ static bool test_taint_range_bitmap(uint32_t addr, uint32_t byte_sz)
 
 	return hasTaint;
 }
+*/
 
+/*
 static void set_taint_range_bitmap(uint32_t addr, uint32_t byte_sz)
 {
 	if(addr >= xt_taint_mem.addr && byte_sz > 0){
@@ -354,6 +447,7 @@ static void set_taint_range_bitmap(uint32_t addr, uint32_t byte_sz)
 	} else
 		DECAF_printf("error, set_taint_range_bitmap: invalid addr or byte_sz\n");
 }
+*/
 
 /*
  * Is the whole range: <addr, byte_sz> has been tainted in
@@ -362,6 +456,8 @@ static void set_taint_range_bitmap(uint32_t addr, uint32_t byte_sz)
  * return:
  * 		true/false
  */
+
+/*
 static bool is_range_taint(uint32_t addr, uint32_t byte_sz)
 {
 	bool hasTaint = true;
@@ -380,11 +476,13 @@ static bool is_range_taint(uint32_t addr, uint32_t byte_sz)
 
 	return hasTaint;
 }
+*/
 
 /*
  * Given a bitmap and the bit index, return if the bit of the index
  * is 0 or 1
  */
+/*
 static inline int test_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_index)
 {
 	if(taint_mem_bitmap == NULL){
@@ -397,10 +495,12 @@ static inline int test_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_index)
 	else
 		return 0;
 }
+*/
 
 /*
  * Given a bitmap and the bit index, set the bit of the index to 1
  */
+/*
 static inline void set_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_idx)
 {
 	if(taint_mem_bitmap == NULL)
@@ -408,7 +508,9 @@ static inline void set_bitmap(uint8_t *taint_mem_bitmap, uint32_t bit_idx)
 	else
 		taint_mem_bitmap[bit_idx / BYTE_TO_BIT] |= 1 << (bit_idx % BYTE_TO_BIT);
 }
+*/
 
+/*
 static inline void print_bitmap(uint8_t *taint_mem_bitmap, uint32_t byte_sz)
 {
 	if(taint_mem_bitmap){
@@ -443,3 +545,4 @@ static inline uint8_t get_mw_byte_size(DATA_TYPE dt)
 
 	return mw_byte_sz;
 }
+*/
