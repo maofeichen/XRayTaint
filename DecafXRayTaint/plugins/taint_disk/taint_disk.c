@@ -6,10 +6,16 @@
 #include "utils/Output.h"
 #include "DECAF_target.h"
 #include "tainting/taintcheck_opt.h"
+// for BlockDriverState
+#include "blockdev.h"
+#include "block_int.h"
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+// from blockdev.c
+//static QTAILQ_HEAD(drivelist, DriveInfo) drives = QTAILQ_HEAD_INITIALIZER(drives);
 
 //basic stub for plugins
 //static plugin_interface_t taint_mem_interface;
@@ -30,10 +36,13 @@ static plugin_interface_t taint_disk_interface;
 //	DATA_TYPE mw_dt;
 //} XT_Mem_Write;
 
+void do_pass_taint_disk(Monitor *mon, const QDict *qdict);
+
 plugin_interface_t* init_plugin(void);
 
 static int taint_disk_init(void);
 static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint8_t pattern);
+static BlockDriverState* get_bs(void);
 //static int taint_mem_init(void);
 //static void load_mem_read_callback(DECAF_Callback_Params* param);
 //static void load_mem_write_callback(DECAF_Callback_Params* param);
@@ -117,10 +126,47 @@ static void taint_disk_cleanup(void) {
     DECAF_printf("Bye world\n");
 }
 
-
 static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint8_t pattern)
 {
     DECAF_printf("enter do_taint_disk() - sec no: %d - sec size: %d - taint_pattern: %x\n", sec_no, sec_sz, pattern);
+
+//    void *opaque = NULL;
+//    if(get_bs(opaque) ) {
+//      fprintf(stderr, "do_taint_disk(): BlockDriverState: %p\n", opaque);
+//    }
+
+    BlockDriverState *bs = get_bs();
+    if(bs != NULL) {
+      fprintf(stderr, "do_taint_disk(): BlockDriverState: %p\n", bs);
+      fprintf(stderr, "bs: total sectors: %d - filename: %s - devicenmae: %s\n", bs->total_sectors, bs->filename, bs->device_name);
+    } else {
+      fprintf(stderr, "error: do_taint_disk() - doesn't find BlockDriverState\n");
+    }
+}
+
+/*
+ * get the BlockDriverState *bs that is required by the taintcheck_taint_disk()
+ */
+static BlockDriverState* get_bs()
+{
+    /*
+    DriveInfo *dinfo;
+//	  int index = 0;
+    QTAILQ_FOREACH(dinfo, &drives, next) {
+        if (dinfo->type == IF_DEFAULT || dinfo->type == IF_SCSI || dinfo->type == IF_IDE ) {
+//          DECAF_bdrv_open(index,(void *)dinfo->bdrv);
+//          ++index;
+          fprintf(stderr, "get_bs(): BlockDriverState: %p\n", dinfo->bdrv);
+          opaque = (void *)dinfo->bdrv;
+          return 1;
+        }
+    }
+
+    return 0;
+    */
+    BlockDriverState *bs = bdrv_find("ide0-hd0");
+    fprintf(stderr, "bdrv_find() bs: %p\n", bs);
+    return bs;
 }
 
 /*
