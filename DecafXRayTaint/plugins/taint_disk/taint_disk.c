@@ -6,6 +6,7 @@
 #include "utils/Output.h"
 #include "DECAF_target.h"
 #include "tainting/taintcheck_opt.h"
+
 // for BlockDriverState
 #include "blockdev.h"
 #include "block_int.h"
@@ -41,7 +42,7 @@ void do_pass_taint_disk(Monitor *mon, const QDict *qdict);
 plugin_interface_t* init_plugin(void);
 
 static int taint_disk_init(void);
-static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint8_t pattern);
+static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint32_t pattern);
 static BlockDriverState* get_bs(void);
 //static int taint_mem_init(void);
 //static void load_mem_read_callback(DECAF_Callback_Params* param);
@@ -78,7 +79,7 @@ void do_pass_taint_disk(Monitor *mon, const QDict *qdict)
 {
     uint32_t sec_no   = 0;
     uint32_t sec_size = 0;
-    uint8_t  pattern  = 0;
+    uint32_t pattern  = 0;
 
     if(qdict != NULL){
         sec_no    = qdict_get_int(qdict, "sec_no");
@@ -126,21 +127,30 @@ static void taint_disk_cleanup(void) {
     DECAF_printf("Bye world\n");
 }
 
-static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint8_t pattern)
+static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint32_t pattern)
 {
     DECAF_printf("enter do_taint_disk() - sec no: %d - sec size: %d - taint_pattern: %x\n", sec_no, sec_sz, pattern);
 
-//    void *opaque = NULL;
-//    if(get_bs(opaque) ) {
-//      fprintf(stderr, "do_taint_disk(): BlockDriverState: %p\n", opaque);
-//    }
+    if(pattern == 0) {
+      fprintf(stderr, "taint pattern is 0\n");
+      return;
+    }
 
     BlockDriverState *bs = get_bs();
     if(bs != NULL) {
-      fprintf(stderr, "do_taint_disk(): BlockDriverState: %p\n", bs);
-      fprintf(stderr, "bs: total sectors: %d - filename: %s - devicenmae: %s\n", bs->total_sectors, bs->filename, bs->device_name);
+      fprintf(stderr, "do_taint_disk(): BlockDriverState: %p "
+          "- total sectors: %d "
+          "- filename: %s "
+          "- devicenmae: %s\n", bs, bs->total_sectors, bs->filename, bs->device_name);
+
+      int offset;
+      for(offset = 0; offset < sec_sz; offset += 4) {
+//        fprintf(stderr, "do_taint_disk() -> taintcheck_taint_disk()\n");
+        taintcheck_taint_disk((uint64_t)(sec_no * 8 + offset / 64), pattern, offset & 63, 4/*size*/, (void*)bs);
+      }
+
     } else {
-      fprintf(stderr, "error: do_taint_disk() - doesn't find BlockDriverState\n");
+      fprintf(stderr, "error: do_taint_disk() - can't find BlockDriverState\n");
     }
 }
 
