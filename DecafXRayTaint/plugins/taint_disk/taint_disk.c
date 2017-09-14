@@ -144,9 +144,16 @@ static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint32_t pattern)
           "- devicenmae: %s\n", bs, bs->total_sectors, bs->filename, bs->device_name);
 
       int offset;
+      uint64_t prev_index, curr_index;
+      prev_index = sec_no * 8 + 0 / 6;
       for(offset = 0; offset < sec_sz; offset += 4) {
 //        fprintf(stderr, "do_taint_disk() -> taintcheck_taint_disk()\n");
-        taintcheck_taint_disk((uint64_t)(sec_no * 8 + offset / 64), pattern, offset & 63, 4/*size*/, (void*)bs);
+        curr_index = sec_no * 8 + offset / 64;
+        taintcheck_taint_disk(curr_index, pattern, offset & 63, 4/*size*/, (void*)bs);
+        if(prev_index != curr_index) {
+          debug_disk_record(prev_index, bs);
+        }
+        prev_index = curr_index;
       }
 
     } else {
