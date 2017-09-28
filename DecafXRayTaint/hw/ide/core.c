@@ -561,9 +561,16 @@ static int ide_handle_rw_error(IDEState *s, int error, int op)
 
 void ide_dma_cb(void *opaque, int ret)
 {
+
     IDEState *s = opaque;
     int n;
     int64_t sector_num;
+
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter core.c: ide_dma_cb() - IDEState: %p - sec no: %d\n", s, ide_get_sector(s));
+    }
+#endif /* CONFIG_TCG_XTAINT */
 
 handle_rw_error:
     if (ret < 0) {
@@ -1021,7 +1028,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
 
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter ide_exec_cmd() - IDEBUS: %p - val: %d\n", bus, val );
+      fprintf(stderr, "enter ide_exec_cmd() - IDEBUS: %p - val: 0x%x\n", bus, val );
     }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -1163,12 +1170,18 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
 #ifdef CONFIG_TCG_XTAINT
         if(enable_debug_ide) {
           int64 sec_num = ide_get_sector(s);
-          fprintf(stderr, "ide_exec_cmd(): WIN_READDMA_X - sec no: %d\n", sec_num);
+          fprintf(stderr, "ide_exec_cmd(): WIN_READDMA_X - sec no: %ld - num sectors: %ld\n", sec_num, s->nsector);
         }
 #endif /* CONFIG_TCG_XTAINT */
         if (!s->bs)
             goto abort_cmd;
 	ide_cmd_lba48_transform(s, lba48);
+#ifdef CONFIG_TCG_XTAINT
+        if(enable_debug_ide) {
+          int64 sec_num = ide_get_sector(s);
+          fprintf(stderr, "ide_exec_cmd(): WIN_READDMA_X after lba - sec no: %ld - num sectors: %ld\n", sec_num, s->nsector);
+        }
+#endif /* CONFIG_TCG_XTAINT */
         ide_sector_start_dma(s, IDE_DMA_READ);
         break;
     case WIN_WRITEDMA_EXT:
@@ -1179,8 +1192,8 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
             goto abort_cmd;
 #ifdef CONFIG_TCG_XTAINT
         if(enable_debug_ide) {
-          int64 sec_num = ide_get_sector(s);
-          fprintf(stderr, "ide_exec_cmd(): WIN_WRITEDMA_X - sec no: %d\n", sec_num);
+//          int64 sec_num = ide_get_sector(s);
+//          fprintf(stderr, "ide_exec_cmd(): WIN_WRITEDMA_X - sec no: %d\n", sec_num);
         }
 #endif /* CONFIG_TCG_XTAINT */
 	ide_cmd_lba48_transform(s, lba48);

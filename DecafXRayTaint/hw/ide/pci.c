@@ -46,6 +46,12 @@ extern int enable_debug_ide;
 static void bmdma_start_dma(IDEDMA *dma, IDEState *s,
                             BlockDriverCompletionFunc *dma_cb)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci.c: bmdma_start_dma() - IDEDMA: %p - IDEState: %p - BlockDriverCompletinFunc: %p - sec no: %d\n", dma, s, dma_cb, ide_get_sector(s) );
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     BMDMAState *bm = DO_UPCAST(BMDMAState, dma, dma);
 
     bm->unit = s->unit;
@@ -159,12 +165,6 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
     }
 #endif /* CONFIG_TCG_XTAINT */
 
-//#ifdef CONFIG_TCG_TAINT
-////fprintf(stderr, "pci_dma_write()\n");
-//                if(ide_get_sector(s) >= 0)
-//                  taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
-//#endif /* CONFIG_TCG_TAINT */
-
 #ifdef CONFIG_TCG_TAINT
 //fprintf(stderr, "pci_dma_write()\n");
                 if(ide_get_sector(s) >= 0)
@@ -186,11 +186,6 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
                   taintcheck_chk_hdwrite(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
 #endif /* CONFIG_TCG_TAINT */
 
-//#ifdef CONFIG_TCG_TAINT
-////fprintf(stderr, "pci_dma_read()\n");
-//                if(ide_get_sector(s) >= 0)
-//                  taintcheck_chk_hdread(bm->cur_prd_addr, bm->cur_addr, l, ide_get_sector(s), s->bs);
-//#endif /* CONFIG_TCG_TAINT */
             }
             bm->cur_prd_addr += l;
             bm->cur_prd_len -= l;
@@ -202,6 +197,12 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
 
 static int bmdma_set_unit(IDEDMA *dma, int unit)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci.c: bmdma_set_unit() - IDEDMA: %p - unit: %d\n", dma, unit);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     BMDMAState *bm = DO_UPCAST(BMDMAState, dma, dma);
     bm->unit = unit;
 
@@ -210,6 +211,12 @@ static int bmdma_set_unit(IDEDMA *dma, int unit)
 
 static int bmdma_add_status(IDEDMA *dma, int status)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci.c: bmdma_add_status() - IDEDMA: %p - status: %d\n", dma, status);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     BMDMAState *bm = DO_UPCAST(BMDMAState, dma, dma);
     bm->status |= status;
 
@@ -218,6 +225,12 @@ static int bmdma_add_status(IDEDMA *dma, int status)
 
 static int bmdma_set_inactive(IDEDMA *dma)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci.c: bmdma_set_inactive() - IDEDMA: %p\n", dma);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     BMDMAState *bm = DO_UPCAST(BMDMAState, dma, dma);
 
     bm->status &= ~BM_STATUS_DMAING;
@@ -283,6 +296,12 @@ static void bmdma_restart_bh(void *opaque)
 
 static void bmdma_restart_cb(void *opaque, int running, RunState state)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci.c: bmdma_restart_cb() - IDEDMA: %p - running: %d\n", opaque, running);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     IDEDMA *dma = opaque;
     BMDMAState *bm = DO_UPCAST(BMDMAState, dma, dma);
 
@@ -305,6 +324,12 @@ static void bmdma_cancel(BMDMAState *bm)
 
 static int bmdma_reset(IDEDMA *dma)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci.c: bmdma_reset() - IDEDMA: %p\n", dma);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     BMDMAState *bm = DO_UPCAST(BMDMAState, dma, dma);
 
 #ifdef DEBUG_IDE
@@ -326,6 +351,12 @@ static int bmdma_reset(IDEDMA *dma)
 
 static int bmdma_start_transfer(IDEDMA *dma)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci.c: bmdma_start_transfer() - IDEDMA: %p\n", dma);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     return 0;
 }
 

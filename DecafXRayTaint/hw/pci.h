@@ -12,6 +12,10 @@
 
 #include "pcie.h"
 
+#ifdef CONFIG_TCG_XTAINT // mchen
+extern int enable_debug_ide;
+#endif
+
 /* PCI bus */
 
 #define PCI_DEVFN(slot, func)   ((((slot) & 0x1f) << 3) | ((func) & 0x07))
@@ -497,12 +501,24 @@ static inline int pci_dma_rw(PCIDevice *dev, dma_addr_t addr,
 static inline int pci_dma_read(PCIDevice *dev, dma_addr_t addr,
                                void *buf, dma_addr_t len)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci_dma_read() (-> pci_dma_rw() ) - PCIDevice: %p - dma_addr_t addr: 0x%x - buf: %p - dma_addr_t len: %lu\n", dev, addr, buf, len);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     return pci_dma_rw(dev, addr, buf, len, DMA_DIRECTION_TO_DEVICE);
 }
 
 static inline int pci_dma_write(PCIDevice *dev, dma_addr_t addr,
                                 const void *buf, dma_addr_t len)
 {
+#ifdef CONFIG_TCG_XTAINT
+    if(enable_debug_ide) {
+      fprintf(stderr, "enter pci_dma_write() (-> pci_dma_rw() ) - PCIDevice: %p - dma_addr_t addr: 0x%x - buf: %p - dma_addr_t len: %lu\n", dev, addr, buf, len);
+    }
+#endif /* CONFIG_TCG_XTAINT */
+
     return pci_dma_rw(dev, addr, (void *) buf, len, DMA_DIRECTION_FROM_DEVICE);
 }
 
