@@ -42,6 +42,8 @@ extern int taintcheck_chk_hdout(int size, int64_t sect_num, uint32_t offset, voi
 #endif /* CONFIG_TCG_TAINT */
 
 #ifdef CONFIG_TCG_XTAINT
+#include <hw/ide/pci.h>
+
 extern int enable_debug_ide;
 #endif
 
@@ -471,7 +473,7 @@ void ide_sector_read(IDEState *s)
 {
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter ide_sector_read() -> sec no: %d\n", ide_get_sector(s) );
+      fprintf(stderr, "enter ide_sector_read() -> sec no: %" PRId64 "\n", ide_get_sector(s) );
     }
 #endif /* CONFIG_TCG_XTAINT */
   int64_t sector_num;
@@ -568,7 +570,7 @@ void ide_dma_cb(void *opaque, int ret)
 
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter core.c: ide_dma_cb() - IDEState: %p - sec no: %d\n", s, ide_get_sector(s));
+      fprintf(stderr, "enter core.c: ide_dma_cb() - IDEState: %p - sec no: %" PRId64 "\n", s, ide_get_sector(s));
     }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -619,8 +621,27 @@ handle_rw_error:
 
     switch (s->dma_cmd) {
     case IDE_DMA_READ:
+    {
+#ifdef CONFIG_TCG_XTAINT
+        BMDMAState *bm = DO_UPCAST(BMDMAState, dma, s->bus->dma);
+        uint32_t cur_addr     = bm->cur_addr;
+
+        int nsg               = (&s->sg)->nsg;
+        uint32_t cur_prd_addr = (&s->sg)->sg[nsg-1].base;
+        uint32_t len          = (&s->sg)->sg[nsg-1].len;
+
+        if(enable_debug_ide)
+            fprintf(stderr, "ide_dma_cb: cur_prd_addr: %x - cur_prd_len: 0x%x - cur_addr: %x\n", cur_prd_addr, len, cur_addr);
+#endif /* CONFIG_TCG_XTAINT */
+
         s->bus->dma->aiocb = dma_bdrv_read(s->bs, &s->sg, sector_num,
                                            ide_dma_cb, s);
+#ifdef CONFIG_TCG_XTAINT
+        if(ide_get_sector(s) >= 0){
+            taintcheck_chk_hdread(cur_prd_addr, cur_addr, len, ide_get_sector(s), s->bs);
+        }
+#endif /* CONFIG_TCG_XTAINT */
+    }
         break;
     case IDE_DMA_WRITE:
         s->bus->dma->aiocb = dma_bdrv_write(s->bs, &s->sg, sector_num,
@@ -678,7 +699,7 @@ void ide_sector_write(IDEState *s)
 {
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "ide_sector_write() -> sec no: %d\n", ide_get_sector(s) );
+      fprintf(stderr, "ide_sector_write() -> sec no: %" PRId64 "\n", ide_get_sector(s) );
     }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -1113,8 +1134,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
     case WIN_READ_ONCE:
 #ifdef CONFIG_TCG_XTAINT
         if(enable_debug_ide) {
-          int64 sec_num = ide_get_sector(s);
-          fprintf(stderr, "core.c: WIN_READ_X - sec no: %d\n", sec_num);
+          fprintf(stderr, "core.c: WIN_READ_X - sec no: %" PRId64 "\n", ide_get_sector(s) );
         }
 #endif /* CONFIG_TCG_XTAINT */
         if (s->drive_kind == IDE_CD) {
@@ -1169,8 +1189,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
     case WIN_READDMA_ONCE:
 #ifdef CONFIG_TCG_XTAINT
         if(enable_debug_ide) {
-          int64 sec_num = ide_get_sector(s);
-          fprintf(stderr, "ide_exec_cmd(): WIN_READDMA_X - sec no: %ld - num sectors: %ld\n", sec_num, s->nsector);
+          fprintf(stderr, "ide_exec_cmd(): WIN_READDMA_X - sec no: %" PRId64 " - num sectors: %" PRIu32 "\n", ide_get_sector(s), s->nsector);
         }
 #endif /* CONFIG_TCG_XTAINT */
         if (!s->bs)
@@ -1178,8 +1197,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
 	ide_cmd_lba48_transform(s, lba48);
 #ifdef CONFIG_TCG_XTAINT
         if(enable_debug_ide) {
-          int64 sec_num = ide_get_sector(s);
-          fprintf(stderr, "ide_exec_cmd(): WIN_READDMA_X after lba - sec no: %ld - num sectors: %ld\n", sec_num, s->nsector);
+          fprintf(stderr, "ide_exec_cmd(): WIN_READDMA_X after lba - sec no: %" PRId64 " - num sectors: %" PRIu32 "\n", ide_get_sector(s), s->nsector);
         }
 #endif /* CONFIG_TCG_XTAINT */
         ide_sector_start_dma(s, IDE_DMA_READ);
@@ -1192,8 +1210,7 @@ void ide_exec_cmd(IDEBus *bus, uint32_t val)
             goto abort_cmd;
 #ifdef CONFIG_TCG_XTAINT
         if(enable_debug_ide) {
-//          int64 sec_num = ide_get_sector(s);
-//          fprintf(stderr, "ide_exec_cmd(): WIN_WRITEDMA_X - sec no: %d\n", sec_num);
+//          fprintf(stderr, "ide_exec_cmd(): WIN_WRITEDMA_X - sec no: %" PRId64 " - num sectors: %" PRIu32 "\n", ide_get_sector(s), s->nsector);
         }
 #endif /* CONFIG_TCG_XTAINT */
 	ide_cmd_lba48_transform(s, lba48);
@@ -1714,8 +1731,8 @@ void ide_data_writew(void *opaque, uint32_t addr, uint32_t val)
 
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter ide_data_writew() (-> taintcheck_chk_hdout() ): sec no: %d, offset: %d, val: %02x\n",
-          ide_get_sector(s), s->data_ptr-s->io_buffer, val);
+      fprintf(stderr, "enter ide_data_writew() (-> taintcheck_chk_hdout() ): sec no: %" PRId64 " -  val: 0x%x\n",
+          ide_get_sector(s), val);
     }
 #endif
 
@@ -1745,8 +1762,7 @@ uint32_t ide_data_readw(void *opaque, uint32_t addr)
 
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter ide_data_readw() (-> taintcheck_chk_hdin() ): sec no: %d, offset: %d, val: %02x\n",
-          ide_get_sector(s), s->data_ptr-s->io_buffer, ret);
+      fprintf(stderr, "enter ide_data_readw() (-> taintcheck_chk_hdin() ): sec no: %" PRId64 "\n", ide_get_sector(s) );
     }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -1778,8 +1794,8 @@ void ide_data_writel(void *opaque, uint32_t addr, uint32_t val)
 
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter ide_data_writel() (-> taintcheck_chk_hdout() ): sec no: %d, offset: %d, val: %02x\n",
-          ide_get_sector(s), s->data_ptr-s->io_buffer, val);
+      fprintf(stderr, "enter ide_data_writel() (-> taintcheck_chk_hdout() ): sec no: %" PRId64 "- val: 0x%x\n",
+          ide_get_sector(s), val);
     }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -1820,8 +1836,7 @@ uint32_t ide_data_readl(void *opaque, uint32_t addr)
 
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "ide_data_readl: sec no: %d, offset: %d, val: %02x\n",
-          ide_get_sector(s), s->data_ptr-s->io_buffer, ret);
+      fprintf(stderr, "ide_data_readl: sec no: %" PRId64 "- val: 0x%x\n", ide_get_sector(s), ret);
     }
 #endif /* CONFIG_TCG_XTAINT */
 

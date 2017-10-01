@@ -28,7 +28,16 @@ extern "C" {
 #endif // __cplusplus
 
 
+// Bug:
+//     if size is 4, it returns 0x0 instead of 0xff ff ff ff,
+//     due to shl edx, cl - edx: 0x1, cl: 32
+//     but cl will be mask only 0~31, results the edx is 0x1 after shl
+// mchen
+#ifdef CONFIG_TCG_XTAINT
+#define size_to_mask(size) ((size) == 4 ? 0xffffffff : ((1u << (size*8) ) - 1u) )
+#else
 #define size_to_mask(size) ((1u << (size*8)) - 1u) //size<=4
+#endif // CONFIG_TCG_XTAINT
 
 #ifdef CONFIG_TCG_TAINT
 

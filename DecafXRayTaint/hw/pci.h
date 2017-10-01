@@ -503,7 +503,7 @@ static inline int pci_dma_read(PCIDevice *dev, dma_addr_t addr,
 {
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter pci_dma_read() (-> pci_dma_rw() ) - PCIDevice: %p - dma_addr_t addr: 0x%x - buf: %p - dma_addr_t len: %lu\n", dev, addr, buf, len);
+      fprintf(stderr, "enter pci_dma_read() (-> pci_dma_rw() ) - PCIDevice: %p - dma_addr_t addr: 0x%x - buf: %p - dma_addr_t len: %" PRIu32 "\n", dev, addr, buf, len);
     }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -515,7 +515,7 @@ static inline int pci_dma_write(PCIDevice *dev, dma_addr_t addr,
 {
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter pci_dma_write() (-> pci_dma_rw() ) - PCIDevice: %p - dma_addr_t addr: 0x%x - buf: %p - dma_addr_t len: %lu\n", dev, addr, buf, len);
+      fprintf(stderr, "enter pci_dma_write() (-> pci_dma_rw() ) - PCIDevice: %p - dma_addr_t addr: 0x%x - buf: %p - dma_addr_t len: %" PRIu32 "\n", dev, addr, buf, len);
     }
 #endif /* CONFIG_TCG_XTAINT */
 

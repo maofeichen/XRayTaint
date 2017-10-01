@@ -59,8 +59,7 @@ int taintcheck_taint_disk(const uint64_t index, const uint32_t taint,
 {
 #ifdef CONFIG_TCG_XTAINT
   if(enable_debug_ide) {
-    fprintf(stderr, "enter taintcheck_taint_disk(): index: %d - offset: %d - size: %d\n",
-        index, offset, size);
+    fprintf(stderr, "enter taintcheck_taint_disk(): index: %" PRIu64 " - taint: 0x%08" PRIu32 " - offset: %d - size: %d\n", index, taint, offset, size);
   }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -76,8 +75,8 @@ int taintcheck_taint_disk(const uint64_t index, const uint32_t taint,
   if (taint & 0x00FF0000) taint2 |= 4;
   if (taint & 0xFF000000) taint2 |= 8;
 
-  //if (taint)
-  //  fprintf(stderr, "taintcheck_taint_disk() taint -> 0x%08x\n", taint);
+//  if (taint)
+//    fprintf(stderr, "taintcheck_taint_disk() taint -> 0x%08x\n", taint);
 
 #if 0 // AWH
   if (offset + size > 64) {
@@ -95,8 +94,10 @@ int taintcheck_taint_disk(const uint64_t index, const uint32_t taint,
       break;
   }
   if (!found) {
-    if (!taint)
+    if (!taint) {
+//      fprintf(stderr, "taintcheck_taint_disk() -> Not found w/ taint\n");
       return 0;
+    }
 
 //fprintf(stderr, "taintcheck_taint_disk() -> Not found w/ taint\n");
     if (!(new_drec = g_malloc0((size_t)sizeof(disk_record_t) /*+
@@ -107,13 +108,20 @@ int taintcheck_taint_disk(const uint64_t index, const uint32_t taint,
     new_drec->bs = bs;
     new_drec->bitmap = taint2 << offset;
     LIST_INSERT_HEAD(head, new_drec, entry);
-//fprintf(stderr, "taintcheck_taint_disk() -> Adding new taint record\n");
-  }
+    fprintf(stderr, "taintcheck_taint_disk() -> Adding new taint record\n");
+  } // !found
   else {
-//fprintf(stderr, "taintcheck_taint_disk() -> Changing taint record\n");
-    drec->bitmap &= ~(size_to_mask(size) << offset);
+    fprintf(stderr, "taintcheck_taint_disk() -> Changing taint record\n");
+    // mchen
+    // why need this?
+    // drec->bitmap &= ~(size_to_mask(size) << offset);
     if (taint) {
-      drec->bitmap |= taint2 << offset;
+      uint64_t taint3 = taint2 << offset;
+      fprintf(stderr, "taint after shift: %d - result: %016" PRIx64 "\n", offset, taint3);
+      fprintf(stderr, "bitmap before or: %016" PRIx64 "\n", drec->bitmap);
+      drec->bitmap = drec->bitmap | taint3;
+      fprintf(stderr, "bitmap after or: %016" PRIx64 "\n", drec->bitmap);
+//      drec->bitmap |= taint2 << offset;
       /*memcpy(drec->records + offset * temu_plugin->taint_record_size,
              record, size * temu_plugin->taint_record_size);*/
     }
@@ -136,8 +144,7 @@ uint32_t taintcheck_disk_check(const uint64_t index, const int offset,
 {
 #ifdef CONFIG_TCG_XTAINT
   if(enable_debug_ide) {
-    fprintf(stderr, "enter taintcheck_disk_check(): index: %d - offset: %d - size: %d\n",
-        index, offset, size);
+    fprintf(stderr, "enter taintcheck_disk_check(): index: %" PRIu64 " -  offset: %d - size: %d - bs: %p\n", index, offset, size, bs);
   }
 #endif /* CONFIG_TCG_XTAINT */
   //if(!TEMU_emulation_started) return 0;
@@ -164,6 +171,17 @@ uint32_t taintcheck_disk_check(const uint64_t index, const int offset,
   if (!found)
     return 0;
 
+#ifdef CONFIG_TCG_XTAINT
+  fprintf(stderr, "size_to_maks(ourSize): 0x%08x\n", size_to_mask(ourSize) );
+  fprintf(stderr, "size_to_maks(0): 0x%08x\n", size_to_mask(0) );
+  fprintf(stderr, "size_to_maks(1): 0x%08x\n", size_to_mask(1) );
+  fprintf(stderr, "size_to_maks(2): 0x%08x\n", size_to_mask(2) );
+  fprintf(stderr, "size_to_maks(3): 0x%08x\n", size_to_mask(3) );
+  fprintf(stderr, "size_to_maks(4): 0x%08x\n", size_to_mask(4) );
+  uint32_t mask_res = 4;
+  fprintf(stderr, "size_to_maks(mask_res): 0x%08x\n", size_to_mask(mask_res) );
+
+#endif
   taint = (drec->bitmap >> offset) & size_to_mask(ourSize);
   if (taint & 1) retval |= 0x000000FF;
   if (taint & 2) retval |= 0x0000FF00;
@@ -202,7 +220,7 @@ int taintcheck_chk_hdout(const int size, const int64_t sect_num,
 {
 #ifdef CONFIG_TCG_XTAINT
   if(enable_debug_ide) {
-    fprintf(stderr, "enter taintcheck_chk_hdout() (-> taintcheck_taint_disk() ) - sec no: %d - size: %d - offset: %d\n", sect_num, size, offset);
+    fprintf(stderr, "enter taintcheck_chk_hdout() (-> taintcheck_taint_disk() ) - sec no: %" PRId64 " - size: %d - offset: %d - bs: %p\n", sect_num, size, offset, s);
   }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -213,9 +231,9 @@ int taintcheck_chk_hdout(const int size, const int64_t sect_num,
 
   //taint_rec = taint_reg_check_slow(reg, 0, size);
 
-  if(taint != 0) {
-    fprintf("taintcheck_chk_hdout -> sec no: %d, size: %d, offset: %d, taint: %x\n", sect_num, size, offset, taint);
-  }
+//  if(taint != 0) {
+//    fprintf("taintcheck_chk_hdout -> sec no: %d, size: %d, offset: %d, taint: %x\n", sect_num, size, offset, taint);
+//  }
 
   taintcheck_taint_disk(sect_num * 8 + offset / 64, taint, offset & 63,
                         size,
@@ -230,7 +248,7 @@ int taintcheck_chk_hdin(const int size, const int64_t sect_num,
 {
 #ifdef CONFIG_TCG_XTAINT
   if(enable_debug_ide) {
-    fprintf(stderr, "enter taintcheck_chk_hdin() (-> taintcheck_disk_check() ) - sec no: %d - size: %d - offset: %d\n", sect_num, size, offset);
+    fprintf(stderr, "enter taintcheck_chk_hdin() (-> taintcheck_disk_check() ) - sec no: %" PRId64 " - size: %d - offset: %d - bs: %p\n", sect_num, size, offset, s);
   }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -240,10 +258,10 @@ int taintcheck_chk_hdin(const int size, const int64_t sect_num,
                             /*records,*/ s);
 //  fprintf(stderr, "taintcheck_chk_hdin -> sec no: %d, size: %d, offset: %d, taints: %x\n",
 //      sect_num, size, offset, cpu_single_env->tempidx);
-  if(cpu_single_env->tempidx) {
-    fprintf(stderr, "taintcheck_chk_hdin -> sec no: %d, size: %d, offset: %d, taint: %x\n",
-        sect_num, size, offset, cpu_single_env->tempidx);
-  }
+//  if(cpu_single_env->tempidx) {
+//    fprintf(stderr, "taintcheck_chk_hdin -> sec no: %d, size: %d, offset: %d, taint: %x\n",
+//        sect_num, size, offset, cpu_single_env->tempidx);
+//  }
 #endif /*CONFIG_TCG_TAINT*/
   return 0;
 }
@@ -253,7 +271,7 @@ int taintcheck_chk_hdwrite(const ram_addr_t paddr,unsigned long vaddr, const int
 {
 #ifdef CONFIG_TCG_XTAINT
   if(enable_debug_ide) {
-    fprintf(stderr, "enter taintcheck_chk_hdwrite() (-> taintcheck_taint_disk() ) - sec no: %d - size: %d - padder: %x - vaddr: %x\n", sect_num, size, paddr, vaddr);
+    fprintf(stderr, "enter taintcheck_chk_hdwrite() (-> taintcheck_taint_disk() ) - sec no: %" PRId64 " - size: %d - padder: %x - vaddr: %x - bs: %p\n", sect_num, size, paddr, vaddr, s);
   }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -265,12 +283,10 @@ int taintcheck_chk_hdwrite(const ram_addr_t paddr,unsigned long vaddr, const int
 
   for (i = paddr; i < paddr + size; i += 4) {
     __taint_ldl_raw_paddr(i, vaddr+i-paddr);
-    fprintf(stderr, "taintcheck_chk_hdwrite() -> Writing taint 0x%08x to disk sec: %d, taint: %x\n",
-        cpu_single_env->tempidx, sect_num, cpu_single_env->tempidx);
+//    fprintf(stderr, "taintcheck_chk_hdwrite() -> Writing taint 0x%08x to disk sec: %d, taint: %x\n", cpu_single_env->tempidx, sect_num, cpu_single_env->tempidx);
     if (cpu_single_env->tempidx){
 //      fprintf(stderr, "taintcheck_chk_hdwrite() -> Writing taint 0x%08x to disk\n", cpu_single_env->tempidx);
-      fprintf(stderr, "taintcheck_chk_hdwrite() -> Writing taint 0x%08x to disk sec: %d\n",
-          cpu_single_env->tempidx, sect_num);
+//      fprintf(stderr, "taintcheck_chk_hdwrite() -> Writing taint 0x%08x to disk sec: %d\n", cpu_single_env->tempidx, sect_num);
     }
 
     taintcheck_taint_disk(sect_num * 8 + (i - paddr) / 64,
@@ -285,7 +301,7 @@ int taintcheck_chk_hdread(const ram_addr_t paddr,unsigned long vaddr, const int 
 		const int64_t sect_num, const void *s) {
 #ifdef CONFIG_TCG_XTAINT
   if(enable_debug_ide) {
-    fprintf(stderr, "enter taintcheck_chk_hdread() (-> taintcheck_disk_check() ) - sec no: %d - size: %d - padder: %x - vaddr: %x\n", sect_num, size, paddr, vaddr);
+    fprintf(stderr, "enter taintcheck_chk_hdread() (-> taintcheck_disk_check() ) - sec no: %" PRId64 " - size: %d - padder: %x - vaddr: %x - bs: %p\n", sect_num, size, paddr, vaddr, s);
   }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -299,8 +315,7 @@ int taintcheck_chk_hdread(const ram_addr_t paddr,unsigned long vaddr, const int 
 //		fprintf(stderr, "taintcheck_chk_hdread -> read taint from disk sec no: %d, taints: %x\n",
 //		    sect_num, cpu_single_env->tempidx);
 		if(cpu_single_env->tempidx) {
-		  fprintf(stderr, "taintcheck_chk_hdread -> read taint from disk sec no: %d, taints: %x\n",
-		      sect_num, cpu_single_env->tempidx);
+		  fprintf(stderr, "taintcheck_chk_hdread -> detected taint from disk sec no: %" PRId64 "\n, taints: %x\n", sect_num, cpu_single_env->tempidx);
 		}
 	}
 #endif /* CONFIG_TCG_TAINT */
@@ -411,3 +426,20 @@ void taintcheck_nic_cleanbuf(const uint32_t addr, const int size)
 }
 
 #endif //CONFIG_TCG_TAINT
+
+#ifdef CONFIG_TCG_XTAINT
+void debug_disk_record(const uint64_t index, const void *bs)
+{
+  struct disk_record_list_head *head = &disk_record_heads[index & (DISK_HTAB_SIZE - 1)];
+  disk_record_t *drec;
+
+  LIST_FOREACH(drec, head, entry) {
+    if (drec->index == index && drec->bs == bs) {
+      fprintf(stderr, "found record: index: %" PRIu64 "- bs: %p - bitmap: 0x%" PRIx64 "\n", drec->index, drec->bs, drec->bitmap);
+      break;
+    }
+    if (drec->index > index)
+      break;
+  }
+}
+#endif

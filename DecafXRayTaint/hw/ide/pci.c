@@ -48,7 +48,7 @@ static void bmdma_start_dma(IDEDMA *dma, IDEState *s,
 {
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "enter pci.c: bmdma_start_dma() - IDEDMA: %p - IDEState: %p - BlockDriverCompletinFunc: %p - sec no: %d\n", dma, s, dma_cb, ide_get_sector(s) );
+      fprintf(stderr, "enter pci.c: bmdma_start_dma() - IDEDMA: %p - IDEState: %p - BlockDriverCompletinFunc: %p - sec no: %" PRId64 "\n", dma, s, dma_cb, ide_get_sector(s) );
     }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -81,7 +81,7 @@ static int bmdma_prepare_buf(IDEDMA *dma, int is_write)
 #ifdef CONFIG_TCG_XTAINT
         if(enable_debug_ide) {
           int64 sec_num = ide_get_sector(s);
-          fprintf(stderr, "enter pci.c: bmdma_prepare_buf() - IDEDMA: %p - sec no: %d\n", dma, sec_num);
+          fprintf(stderr, "enter pci.c: bmdma_prepare_buf() - IDEDMA: %p - sec no: %" PRId64 "\n", dma, sec_num);
         }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -104,6 +104,10 @@ static int bmdma_prepare_buf(IDEDMA *dma, int is_write)
             bm->cur_prd_len = len;
             bm->cur_prd_addr = prd.addr;
             bm->cur_prd_last = (prd.size & 0x80000000);
+#ifdef CONFIG_TCG_XTAINT
+            if(enable_debug_ide)
+                fprintf(stderr, "bmdma_prepare_buf: cur_prd_addr: %x - cur_prd_len: %x - cur_addr: %x\n", bm->cur_prd_addr, bm->cur_prd_len, bm->cur_addr);
+#endif
         }
         l = bm->cur_prd_len;
         if (l > 0) {
@@ -111,6 +115,10 @@ static int bmdma_prepare_buf(IDEDMA *dma, int is_write)
             bm->cur_prd_addr += l;
             bm->cur_prd_len -= l;
             s->io_buffer_size += l;
+#ifdef CONFIG_TCG_XTAINT
+            if(enable_debug_ide)
+                fprintf(stderr, "bmdma_prepare_buf: cur_prd_addr: %x - cur_prd_len: %x - cur_addr: %x\n", bm->cur_prd_addr, bm->cur_prd_len, bm->cur_addr);
+#endif
         }
     }
     return 1;
@@ -161,7 +169,7 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
                               s->io_buffer + s->io_buffer_index, l);
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "pci_dma_write() (-> taintcheck_chk_hdread() ): sec no: %d\n", ide_get_sector(s));
+      fprintf(stderr, "pci_dma_write() (-> taintcheck_chk_hdread() ): sec no: %" PRId64 "\n", ide_get_sector(s));
     }
 #endif /* CONFIG_TCG_XTAINT */
 
@@ -176,7 +184,7 @@ static int bmdma_rw_buf(IDEDMA *dma, int is_write)
                              s->io_buffer + s->io_buffer_index, l);
 #ifdef CONFIG_TCG_XTAINT
     if(enable_debug_ide) {
-      fprintf(stderr, "pci_dma_read() (-> taintcheck_chk_hdwrite() ): sec no: %d\n",ide_get_sector(s) );
+      fprintf(stderr, "pci_dma_read() (-> taintcheck_chk_hdwrite() ): sec no: %" PRId64 "\n", ide_get_sector(s) );
     }
 #endif /* CONFIG_TCG_XTAINT */
 

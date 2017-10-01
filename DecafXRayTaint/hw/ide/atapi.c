@@ -301,8 +301,7 @@ static void ide_atapi_cmd_read_dma_cb(void *opaque, int ret)
 
  #ifdef CONFIG_TCG_XTAINT
         if(enable_debug_ide) {
-          int64 sec_num = ide_get_sector(s);
-          fprintf(stderr, "enter: atapi.c - ide_atapi_cmd_read_dma_cb - sec no: %d\n", sec_num);
+          fprintf(stderr, "enter: atapi.c - ide_atapi_cmd_read_dma_cb - sec no: %" PRId64 "\n", ide_get_sector(s) );
         }
 #endif /* CONFIG_TCG_XTAINT */
 
