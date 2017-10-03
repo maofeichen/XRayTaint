@@ -28,13 +28,21 @@ extern "C" {
 #endif // __cplusplus
 
 
-// Bug:
+// Bug: mchen
 //     if size is 4, it returns 0x0 instead of 0xff ff ff ff,
 //     due to shl edx, cl - edx: 0x1, cl: 32
 //     but cl will be mask only 0~31, results the edx is 0x1 after shl
-// mchen
 #ifdef CONFIG_TCG_XTAINT
 #define size_to_mask(size) ((size) == 4 ? 0xffffffff : ((1u << (size*8) ) - 1u) )
+
+// In the 64 bit bitmap of disk_record_t, each bit represents 1 byte. Need to
+// convert back size to bitmap
+//  size    return
+//  1       1b
+//  2       11b
+//  3       111b
+//  4       1111b
+#define size_to_bitmask(size) ((1u << size) - 1u) // size<=4
 #else
 #define size_to_mask(size) ((1u << (size*8)) - 1u) //size<=4
 #endif // CONFIG_TCG_XTAINT

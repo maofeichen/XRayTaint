@@ -112,9 +112,15 @@ int taintcheck_taint_disk(const uint64_t index, const uint32_t taint,
   } // !found
   else {
     fprintf(stderr, "taintcheck_taint_disk() -> Changing taint record\n");
-    // mchen
-    // why need this?
-    // drec->bitmap &= ~(size_to_mask(size) << offset);
+#ifdef CONFIG_TCG_XTAINT
+    uint64_t bit_mask = size_to_bitmask(size);
+    bit_mask          = bit_mask << offset;
+    bit_mask          = ~bit_mask;
+    fprintf(stderr, "size to bitmask:%016" PRIx64 "\n", bit_mask);
+    drec->bitmap &= bit_mask;
+#else
+    drec->bitmap &= ~(size_to_mask(size) << offset);
+#endif // CONFIG_TCG_XTAINT
     if (taint) {
       uint64_t taint3 = taint2 << offset;
       fprintf(stderr, "taint after shift: %d - result: %016" PRIx64 "\n", offset, taint3);

@@ -621,7 +621,7 @@ handle_rw_error:
 
     switch (s->dma_cmd) {
     case IDE_DMA_READ:
-    {
+      {
 #ifdef CONFIG_TCG_XTAINT
         BMDMAState *bm = DO_UPCAST(BMDMAState, dma, s->bus->dma);
         uint32_t cur_addr     = bm->cur_addr;
@@ -630,8 +630,9 @@ handle_rw_error:
         uint32_t cur_prd_addr = (&s->sg)->sg[nsg-1].base;
         uint32_t len          = (&s->sg)->sg[nsg-1].len;
 
-        if(enable_debug_ide)
+        if(enable_debug_ide) {
             fprintf(stderr, "ide_dma_cb: cur_prd_addr: %x - cur_prd_len: 0x%x - cur_addr: %x\n", cur_prd_addr, len, cur_addr);
+        }
 #endif /* CONFIG_TCG_XTAINT */
 
         s->bus->dma->aiocb = dma_bdrv_read(s->bs, &s->sg, sector_num,
@@ -641,11 +642,13 @@ handle_rw_error:
             taintcheck_chk_hdread(cur_prd_addr, cur_addr, len, ide_get_sector(s), s->bs);
         }
 #endif /* CONFIG_TCG_XTAINT */
-    }
+      }
         break;
     case IDE_DMA_WRITE:
+      {
         s->bus->dma->aiocb = dma_bdrv_write(s->bs, &s->sg, sector_num,
                                             ide_dma_cb, s);
+      }
         break;
     case IDE_DMA_TRIM:
         s->bus->dma->aiocb = dma_bdrv_io(s->bs, &s->sg, sector_num,
