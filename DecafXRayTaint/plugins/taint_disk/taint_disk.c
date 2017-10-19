@@ -22,23 +22,25 @@ void do_pass_taint_disk(Monitor *mon, const QDict *qdict);
 plugin_interface_t* init_plugin(void);
 
 static int taint_disk_init(void);
-static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint32_t pattern);
+static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint32_t offset, uint32_t pattern);
 static BlockDriverState* get_bs(void);
 
 void do_pass_taint_disk(Monitor *mon, const QDict *qdict)
 {
     uint32_t sec_no   = 0;
     uint32_t sec_size = 0;
+    uint32_t offset   = 0;
     uint32_t pattern  = 0;
 
     if(qdict != NULL){
         sec_no    = qdict_get_int(qdict, "sec_no");
         sec_size  = qdict_get_int(qdict, "sec_sz");
+        offset    = qdict_get_int(qdict, "offset");
         pattern   = qdict_get_int(qdict, "taint_pattern");
-        DECAF_printf("Taint disk - sec no: %d - sec size: %d - taint_pattern: %x\n", sec_no, sec_size, pattern);
+        DECAF_printf("Taint disk - sec no: %d - sec size: %d - offset: %ud - taint_pattern: %x\n", sec_no, sec_size, offset, pattern);
 
         if(sec_no && sec_size && pattern) {
-          do_taint_disk(sec_no, sec_size, pattern);
+          do_taint_disk(sec_no, sec_size, offset, pattern);
         }
     }
 }
@@ -49,10 +51,10 @@ void do_pass_taint_disk(Monitor *mon, const QDict *qdict)
 static mon_cmd_t taint_disk_cmds[] = {
 		{
 		    .name       = "pass_taint_disk_args",
-		    .args_type  = "sec_no:i,sec_sz:i,taint_pattern:i",
+		    .args_type  = "sec_no:i,sec_sz:i,offset:i,taint_pattern:i",
 		    .mhandler.cmd   = do_pass_taint_disk,
-		    .params     = "sec_no sec_sz taint_pattern",
-		    .help       = "pass the sector no, sector size and pattern for tainting disk"
+		    .params     = "sec_no sec_sz offset taint_pattern",
+		    .help       = "pass the sector no, sector size, offset and pattern for tainting disk"
 		},
 };
 
@@ -73,9 +75,9 @@ static void taint_disk_cleanup(void) {
     DECAF_printf("Bye world\n");
 }
 
-static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint32_t pattern)
+static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint32_t offset, uint32_t pattern)
 {
-    DECAF_printf("enter do_taint_disk() - sec no: %d - sec size: %d - taint_pattern: %x\n", sec_no, sec_sz, pattern);
+    DECAF_printf("enter do_taint_disk() - sec no: %ud - sec size: %ud - offset: %ud - taint_pattern: %x\n", sec_no, sec_sz, offset, pattern);
 
     if(pattern == 0) {
       fprintf(stderr, "taint pattern is 0\n");
@@ -89,13 +91,13 @@ static void do_taint_disk(uint32_t sec_no, uint32_t sec_sz, uint32_t pattern)
           "- filename: %s "
           "- devicenmae: %s\n", bs, bs->total_sectors, bs->filename, bs->device_name);
 
-      int offset;
+      int bm_offset;
       uint64_t prev_index, curr_index;
-      prev_index = sec_no * 8;
-      for(offset = 0; offset < sec_sz; offset += 4) {
+      prev_index = sec_no * 8 + offset / 64;
+      for(bm_offset = offset ; bm_offset < sec_sz + offset; bm_offset += 4) {
 //        fprintf(stderr, "do_taint_disk() -> taintcheck_taint_disk()\n");
-        curr_index = sec_no * 8 + offset / 64;
-        taintcheck_taint_disk(curr_index, pattern, offset & 63, 4/*size*/, (void*)bs);
+        curr_index = sec_no * 8 + bm_offset / 64;
+        taintcheck_taint_disk(curr_index, pattern, bm_offset & 63, 4/*size*/, (void*)bs);
         if(prev_index != curr_index) {
           debug_disk_record(prev_index, bs);
         }
